@@ -1,5 +1,5 @@
-// lib/presentation/features/main/pages/main_navigation_page.dart
 import 'package:flutter/material.dart';
+import 'package:mechanic_app/core/constants/asset_paths.dart';
 import 'package:mechanic_app/presentation/features/ticket/pages/ticket_dashboard_page.dart';
 import 'package:mechanic_app/presentation/features/profile/pages/profile_page.dart';
 
@@ -14,7 +14,6 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
-
   late final List<Widget> _pages;
 
   @override
@@ -22,8 +21,8 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     super.initState();
     _pages = [
       TicketDashboardPage(mechanicId: widget.mechanicId),
-      const _HistoryPlaceholderPage(), // Menu Riwayat Kerja
-      const ProfilePage(),             // Menu Profil & Keluar Aplikasi
+      const _HistoryPlaceholderPage(),
+      const ProfilePage(),
     ];
   }
 
@@ -46,18 +45,18 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         elevation: 8,
         destinations: const [
           NavigationDestination(
-            selectedIcon: Icon(Icons.assignment_rounded, color: Colors.blue),
-            icon: Icon(Icons.assignment_outlined),
+            selectedIcon: _SafeNavigationIcon(assetPath: AssetPaths.icTicket, fallbackIcon: Icons.assignment_rounded, isActive: true),
+            icon: _SafeNavigationIcon(assetPath: AssetPaths.icTicket, fallbackIcon: Icons.assignment_outlined, isActive: false),
             label: 'Tugas Aktif',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.history_toggle_off_rounded, color: Colors.blue),
-            icon: Icon(Icons.history_rounded),
+            selectedIcon: _SafeNavigationIcon(assetPath: AssetPaths.icCalendar, fallbackIcon: Icons.history_toggle_off_rounded, isActive: true),
+            icon: _SafeNavigationIcon(assetPath: AssetPaths.icCalendar, fallbackIcon: Icons.history_rounded, isActive: false),
             label: 'Riwayat',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.account_circle_rounded, color: Colors.blue),
-            icon: Icon(Icons.account_circle_outlined),
+            selectedIcon: _SafeNavigationIcon(assetPath: AssetPaths.icPerson, fallbackIcon: Icons.account_circle_rounded, isActive: true),
+            icon: _SafeNavigationIcon(assetPath: AssetPaths.icPerson, fallbackIcon: Icons.account_circle_outlined, isActive: false),
             label: 'Profil',
           ),
         ],
@@ -66,14 +65,43 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 }
 
-/// Placeholder halaman Riwayat Kerja untuk menjaga kelengkapan arsitektur sistem
+/// Widget dekorator untuk merender berkas ikon statis dengan skema jaminan safety fallback.
+class _SafeNavigationIcon extends StatelessWidget {
+  final String assetPath;
+  final IconData fallbackIcon;
+  final bool isActive;
+
+  const _SafeNavigationIcon({
+    required this.assetPath,
+    required this.fallbackIcon,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = Colors.blue.shade800;
+    final inactiveColor = Colors.blueGrey.shade600;
+    
+    return Image.asset(
+      assetPath,
+      height: 24,
+      width: 24,
+      color: isActive ? activeColor : inactiveColor,
+      // Jika pustaka SVG belum di-load atau berkas belum ada, render Icon dasar tanpa error crash
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(fallbackIcon, color: isActive ? activeColor : inactiveColor);
+      },
+    );
+  }
+}
+
 class _HistoryPlaceholderPage extends StatelessWidget {
   const _HistoryPlaceholderPage();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey.shade50,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('RIWAYAT PENGERJAAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: Colors.white,
@@ -86,14 +114,14 @@ class _HistoryPlaceholderPage extends StatelessWidget {
           children: [
             Icon(Icons.history_rounded, size: 64, color: Colors.blueGrey.shade300),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Belum Ada Riwayat Selesai',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade700),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
             ),
             const SizedBox(height: 4),
-            Text(
+            const Text(
               'Tiket yang Anda selesaikan akan muncul di sini.',
-              style: TextStyle(fontSize: 13, color: const Color(0xFF64748B)),
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
         ),
