@@ -20,7 +20,7 @@ import '../../data/repositories/auth_repository_impl.dart' as _i895;
 import '../../data/repositories/service_ticket_repository_impl.dart' as _i479;
 import '../../domain/repositories/auth_repository.dart' as _i1073;
 import '../../domain/repositories/service_ticket_repository.dart' as _i994;
-import '../../presentation/features/ticket/cubit/auth_cubit.dart' as _i917;
+import '../../presentation/features/auth/cubit/auth_cubit.dart' as _i224;
 import '../../presentation/features/ticket/cubit/ticket_cubit.dart' as _i647;
 import 'firebase_modul.dart' as _i893;
 
@@ -52,8 +52,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i895.AuthRepositoryImpl(gh<_i1016.AuthRemoteDataSource>()));
     gh.factory<_i647.TicketCubit>(
         () => _i647.TicketCubit(gh<_i994.ServiceTicketRepository>()));
-    gh.factory<_i917.AuthCubit>(
-        () => _i917.AuthCubit(gh<_i1073.AuthRepository>()));
+    gh.factory<_i224.AuthCubit>(
+        () => _i224.AuthCubit(gh<_i1073.AuthRepository>()));
     return this;
   }
 }
