@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +5,7 @@ import 'core/di/injection.dart';
 import 'presentation/features/auth/cubit/auth_cubit.dart';
 import 'presentation/features/auth/cubit/auth_state.dart';
 import 'presentation/features/auth/pages/login_page.dart';
+import 'presentation/features/ticket/pages/ticket_dashboard_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,22 +42,8 @@ class MyApp extends StatelessWidget {
         home: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             if (state is Authenticated) {
-              return Scaffold(
-                appBar: AppBar(
-                  title: const Text('Dashboard Mekanik'),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.logout),
-                      onPressed: () => context.read<AuthCubit>().logout(),
-                    )
-                  ],
-                ),
-                body: Center(
-                  child: Text('Halo Mekanik: ${state.user.name}\nEngine is Active!'),
-                ),
-              );
+              return TicketDashboardPage(mechanicId: state.user.uid);
             }
-            
             if (state is AuthLoading) {
               return const Scaffold(
                 body: Center(
