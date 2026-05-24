@@ -1,11 +1,11 @@
-// lib/presentation/features/ticket/pages/ticket_dashboard_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mechanic_app/core/constants/asset_paths.dart'; // Solusi: Menyematkan import file AssetPaths
+import 'package:mechanic_app/core/constants/asset_paths.dart'; 
 import 'package:mechanic_app/core/di/injection.dart';
 import 'package:mechanic_app/domain/entities/service_ticket_entity.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_cubit.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_state.dart';
+import 'package:mechanic_app/presentation/features/ticket/pages/ticket_detail_page.dart';
 
 class TicketDashboardPage extends StatelessWidget {
   final String mechanicId;
@@ -151,8 +151,17 @@ class _PremiumTicketCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Membuka formulir pengerjaan: ${ticket.ticketId}')),
+            // Ambil instance TicketCubit yang aktif saat ini dari context dashboard
+            final currentTicketCubit = context.read<TicketCubit>();
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BlocProvider<TicketCubit>.value(
+                  value: currentTicketCubit, // Meneruskan instance cubit yang sama agar sync data terjaga
+                  child: TicketDetailPage(ticketDocumentId: ticket.id),
+                ),
+              ),
             );
           },
           child: Column(
