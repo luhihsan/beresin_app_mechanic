@@ -31,11 +31,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel?> getCurrentUserData() async {
-    final currentUser = _firebaseAuth.currentUser;
-    if (currentUser == null) return null;
-    return _fetchUserData(currentUser.uid);
-  }
+Future<UserModel?> getCurrentUserData() async {
+  final currentUser = await _firebaseAuth.authStateChanges().first;
+  
+  if (currentUser == null) return null;
+  return _fetchUserData(currentUser.uid);
+}
 
   @override
   Future<void> signOut() async {

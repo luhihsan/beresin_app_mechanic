@@ -6,7 +6,7 @@ import 'package:mechanic_app/core/di/injection.dart';
 import 'package:mechanic_app/presentation/features/auth/cubit/auth_cubit.dart';
 import 'package:mechanic_app/presentation/features/auth/cubit/auth_state.dart';
 import 'package:mechanic_app/presentation/features/auth/pages/login_page.dart';
-import 'package:mechanic_app/presentation/features/main/pages/main_navigation_page.dart'; // IMPORT BARIS INI
+import 'package:mechanic_app/presentation/features/main/pages/main_navigation_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,16 +36,51 @@ class MyApp extends StatelessWidget {
         home: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             if (state is Authenticated) {
-              // PEMBARUAN: Mengalihkan rute ke MainNavigationPage (3 Tab Navigasi)
               return MainNavigationPage(mechanicId: state.user.uid);
             }
-            if (state is AuthLoading) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
+            
+            // PEMBARUAN: Menangani State Awal/Loading dengan halaman Splash Branding premium
+            if (state is AuthLoading || state is AuthInitial) {
+              return const _SplashLoadingView();
             }
+            
             return const LoginPage();
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Komponen internal Splash Screen privat untuk kelancaran transisi loading session
+class _SplashLoadingView extends StatelessWidget {
+  const _SplashLoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A), // Premium Dark Slate
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: const Icon(
+                Icons.engineering_rounded,
+                size: 64,
+                color: Color(0xFF3B82F6),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+            ),
+          ],
         ),
       ),
     );
