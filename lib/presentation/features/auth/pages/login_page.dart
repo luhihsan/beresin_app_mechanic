@@ -1,8 +1,8 @@
 // lib/presentation/features/auth/pages/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/auth_cubit.dart';
-import '../cubit/auth_state.dart';
+import 'package:mechanic_app/presentation/features/auth/cubit/auth_cubit.dart';
+import 'package:mechanic_app/presentation/features/auth/cubit/auth_state.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,7 +19,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    // Wajib melakukan dispose controller demi mencegah kebocoran memori (memory leak)
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -36,27 +35,38 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
+      backgroundColor: Colors.blueGrey.shade50,
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
-          // Navigasi ke halaman utama jika otentikasi sukses dan lolos validasi role
           if (state is Authenticated) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Selamat datang kembali, ${state.user.name}!'),
-                backgroundColor: Colors.green,
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle_outline, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Text('Selamat bekerja, ${state.user.name}!'),
+                  ],
+                ),
+                backgroundColor: Colors.green.shade700,
+                behavior: SnackBarBehavior.floating,
               ),
             );
-            // TODO: Ganti dengan route Dashboard/Home Ticket Anda nanti
-            // Navigator.of(context).pushReplacementNamed('/home');
           }
-          
-          // Tampilkan feedback error jika gagal masuk (misal: Salah password atau salah role)
           if (state is Unauthenticated && state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: Colors.red,
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(state.errorMessage!)),
+                  ],
+                ),
+                backgroundColor: Colors.red.shade700,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -72,89 +82,116 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Header Aplikasi
-                    const Icon(
-                      Icons.build_circle_rounded,
-                      size: 80,
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Beresin Garasi',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                    // Brand Identity Section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.engineering_rounded,
+                        size: 72,
+                        color: Colors.blue.shade800,
                       ),
                     ),
-                    const Text(
-                      'Portal Operasional Mekanik',
+                    const SizedBox(height: 24),
+                    Text(
+                      'Beresin Garasi',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueGrey.shade900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sistem Manajemen Bengkel - Aplikasi Mekanik',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.blueGrey.shade500,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 40),
 
-                    // Input Email
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Email Mekanik',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
+                    // Card Input Fields
+                    Card(
+                      elevation: 0,
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Colors.blueGrey.shade200),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Email tidak boleh kosong';
-                        }
-                        // Regex standar untuk validasi format email
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
-                          return 'Format email tidak valid';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Input Password
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: !_isPasswordVisible,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _onLoginSubmitted(),
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outlined),
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            });
-                          },
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              decoration: InputDecoration(
+                                labelText: 'Email Pengguna',
+                                hintText: 'nama@bengkel.com',
+                                prefixIcon: const Icon(Icons.mail_outline_rounded),
+                                filled: true,
+                                fillColor: Colors.blueGrey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Email wajib diisi';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: !_isPasswordVisible,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _onLoginSubmitted(),
+                              decoration: InputDecoration(
+                                labelText: 'Kata Sandi',
+                                prefixIcon: const Icon(Icons.lock_open_rounded),
+                                filled: true,
+                                fillColor: Colors.blueGrey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _isPasswordVisible
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isPasswordVisible = !_isPasswordVisible;
+                                    });
+                                  },
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Kata sandi wajib diisi';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Password tidak boleh kosong';
-                        }
-                        if (value.length < 6) {
-                          return 'Password minimal 6 karakter';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 24),
 
-                    // Tombol Submit dengan deteksi loading state
+                    // Modern Action Button
                     BlocBuilder<AuthCubit, AuthState>(
                       builder: (context, state) {
                         final isLoading = state is AuthLoading;
@@ -162,28 +199,31 @@ class _LoginPageState extends State<LoginPage> {
                         return ElevatedButton(
                           onPressed: isLoading ? null : _onLoginSubmitted,
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            backgroundColor: Colors.blue.shade800,
                             foregroundColor: Colors.white,
                             disabledBackgroundColor: Colors.blue.shade200,
+                            elevation: 2,
+                            shadowColor: Colors.blue.shade300,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: isLoading
                               ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
+                                  height: 24,
+                                  width: 24,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth: 2.5,
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
                               : const Text(
-                                  'MASUK KE SISTEM',
+                                  'MASUK OPERASIONAL',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
                                   ),
                                 ),
                         );

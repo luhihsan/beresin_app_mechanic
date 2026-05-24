@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mechanic_app/core/di/injection.dart';
 import 'package:mechanic_app/domain/entities/service_ticket_entity.dart';
-import 'package:mechanic_app/presentation/features/auth/cubit/auth_cubit.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_cubit.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_state.dart';
 
@@ -15,22 +14,26 @@ class TicketDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TicketCubit>(
-      // Memicu stream realtime Firestore tepat saat halaman dashboard di-mount
       create: (context) => getIt<TicketCubit>()..watchMechanicTickets(mechanicId),
       child: Scaffold(
+        backgroundColor: Colors.blueGrey.shade50,
         appBar: AppBar(
           title: const Text(
-            'TUGAS MEKANIK',
-            style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0),
+            'ANTREAN SERVIS REALTIME',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5),
           ),
-          backgroundColor: Colors.amber.shade700,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.blueGrey.shade900,
+          elevation: 0,
+          centerTitle: false,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.logout_rounded),
-              tooltip: 'Keluar Aplikasi',
-              onPressed: () => context.read<AuthCubit>().logout(),
-            ),
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              child: const Badge(
+                alignment: AlignmentDirectional.topEnd,
+                child: Icon(Icons.notifications_none_rounded, color: Colors.black87),
+              ),
+            )
           ],
         ),
         body: BlocBuilder<TicketCubit, TicketState>(
@@ -41,36 +44,35 @@ class TicketDashboardPage extends StatelessWidget {
 
             if (state is TicketError) {
               return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Text(
-                    'Error: ${state.message}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                  ),
-                ),
+                child: Text('Gagal memuat data: ${state.message}', style: const TextStyle(color: Colors.red)),
               );
             }
 
             if (state is TicketLoaded) {
-              final tickets = state.tickets;
+              // Menyaring tiket yang aktif saja untuk halaman dashboard mekanik
+              final activeTickets = state.tickets.where((t) => t.status != 'completed').toList();
 
-              if (tickets.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'Belum ada tiket servis\nyang ditugaskan ke Anda.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+              if (activeTickets.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.assignment_turned_in_outlined, size: 64, color: Colors.blueGrey.shade300),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Semua Tugas Selesai!',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade700),
+                      ),
+                    ],
                   ),
                 );
               }
 
               return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: tickets.length,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemCount: activeTickets.length,
                 itemBuilder: (context, index) {
-                  final ticket = tickets[index];
-                  return _TicketCard(ticket: ticket);
+                  return _ModernTicketCard(ticket: activeTickets[index]);
                 },
               );
             }
@@ -83,141 +85,80 @@ class TicketDashboardPage extends StatelessWidget {
   }
 }
 
-class _TicketCard extends StatelessWidget {
+class _ModernTicketCard extends StatelessWidget {
   final ServiceTicketEntity ticket;
 
-  const _TicketCard({required this.ticket});
+  const _ModernTicketCard({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
-    // Penentuan warna badge berdasarkan status order
-    Color statusColor;
-    String statusText;
-
-    switch (ticket.status) {
-      case 'waiting':
-        statusColor = Colors.orange.shade800;
-        statusText = 'MENUNGGU';
-        break;
-      case 'processing':
-        statusColor = Colors.blue.shade800;
-        statusText = 'DIPROSES';
-        break;
-      case 'completed':
-        statusColor = Colors.green.shade800;
-        statusText = 'SELESAI';
-        break;
-      default:
-        statusColor = Colors.grey;
-        statusText = ticket.status.toUpperCase();
-    }
+    final isProcessing = ticket.status == 'processing';
+    final accentColor = isProcessing ? Colors.blue.shade700 : Colors.orange.shade800;
 
     return Card(
-      elevation: 4,
+      color: Colors.white,
+      elevation: 0,
       margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // TODO: Navigasi ke Halaman Detail Servis & Input Nota Pengadaan
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Membuka tiket: ${ticket.ticketId}')),
-          );
-        },
-        child: Padding(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.blueGrey.shade200),
+      ),
+      child: ClipPath(
+        clipper: ShapeBorderClipper(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: accentColor, width: 6)),
+          ),
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Baris Atas: ID Tiket & Badge Status
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     ticket.ticketId,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey.shade500, fontSize: 13),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor,
-                      borderRadius: BorderRadius.circular(6),
+                      color: accentColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      statusText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
+                      ticket.status == 'processing' ? 'SEDANG DIKERJAKAN' : 'MENUNGGU',
+                      style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
                 ],
               ),
-              const Divider(height: 24),
-
-              // Detail Kendaraan & Informasi Tugas
+              const SizedBox(height: 12),
+              Text(
+                'Deskripsi Perbaikan:',
+                style: TextStyle(fontSize: 11, color: Colors.blueGrey.shade400, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                ticket.tasks,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade800),
+              ),
+              const SizedBox(height: 16),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.directions_car_filled_rounded, size: 40, color: Colors.blueGrey),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'PLAT NOMOR:',
-                          style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          // Simulasi data kendaraan dari ID / relasi jika diperlukan,
-                          // untuk sementara kita tampilkan info core task-nya
-                          'Task Servis Aktif',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade900,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          ticket.tasks,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14, color: Colors.black87),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
-                ],
-              ),
-              
-              // Indikator Tambahan: Jumlah Pengadaan Suku Cadang Luar saat ini
-              if (ticket.externalProcurements.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
+                  Row(
                     children: [
-                      const Icon(Icons.receipt_long_rounded, size: 16, color: Colors.green),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${ticket.externalProcurements.length} Nota Pembelian Suku Cadang Terinput',
-                        style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w600),
-                      ),
+                      Icon(Icons.speed_rounded, size: 16, color: Colors.blueGrey.shade400),
+                      const SizedBox(width: 4),
+                      Text('KM Masuk: ${ticket.kmCheckIn}', style: TextStyle(color: Colors.blueGrey.shade600, fontSize: 13)),
                     ],
                   ),
-                ),
-              ],
+                  Icon(Icons.arrow_forward_rounded, color: Colors.blueGrey.shade400, size: 20),
+                ],
+              )
             ],
           ),
         ),

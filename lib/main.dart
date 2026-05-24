@@ -1,21 +1,17 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'core/di/injection.dart';
-import 'presentation/features/auth/cubit/auth_cubit.dart';
-import 'presentation/features/auth/cubit/auth_state.dart';
-import 'presentation/features/auth/pages/login_page.dart';
-import 'presentation/features/ticket/pages/ticket_dashboard_page.dart';
+import 'package:mechanic_app/core/di/injection.dart';
+import 'package:mechanic_app/presentation/features/auth/cubit/auth_cubit.dart';
+import 'package:mechanic_app/presentation/features/auth/cubit/auth_state.dart';
+import 'package:mechanic_app/presentation/features/auth/pages/login_page.dart';
+import 'package:mechanic_app/presentation/features/main/pages/main_navigation_page.dart'; // IMPORT BARIS INI
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 1. Inisialisasi Firebase Core
   await Firebase.initializeApp();
-  
-  // 2. Inisialisasi Dependency Injection (GetIt)
   await configureDependencies();
-
   runApp(const MyApp());
 }
 
@@ -26,7 +22,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        // Menyediakan AuthCubit secara global ke seluruh pohon widget aplikasi
         BlocProvider<AuthCubit>(
           create: (context) => getIt<AuthCubit>()..checkAuthStatus(),
         ),
@@ -38,21 +33,17 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        // Menggunakan BlocBuilder untuk menentukan skrin awal berdasarkan status login terakhir
         home: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             if (state is Authenticated) {
-              return TicketDashboardPage(mechanicId: state.user.uid);
+              // PEMBARUAN: Mengalihkan rute ke MainNavigationPage (3 Tab Navigasi)
+              return MainNavigationPage(mechanicId: state.user.uid);
             }
             if (state is AuthLoading) {
               return const Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
-                ),
+                body: Center(child: CircularProgressIndicator()),
               );
             }
-
-            // Jika Unauthenticated, arahkan paksa ke halaman login
             return const LoginPage();
           },
         ),
