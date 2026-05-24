@@ -1,4 +1,4 @@
-package com.example.beresin_app_mechanic
+package com.example.mechanic_app
 
 import io.flutter.embedding.android.FlutterActivity
 

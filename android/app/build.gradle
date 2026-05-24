@@ -1,13 +1,14 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
     id "com.google.gms.google-services"
 }
 
 android {
-    namespace = "com.example.beresin_app_mechanic"
+    // UBAH BARIS INI: Sesuaikan namespace dengan registrasi Firebase
+    namespace = "com.example.mechanic_app"
+    
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,8 +22,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.beresin_app_mechanic"
-        // Konfigurasi API 23 untuk mematuhi SDK Firebase terbaru
+        applicationId = "com.example.mechanic_app"
+        
         minSdkVersion 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -31,7 +32,6 @@ android {
 
     buildTypes {
         release {
-            // Menggunakan debug signing config sementara untuk kebutuhan pengujian release build
             signingConfig = signingConfigs.debug
         }
     }
