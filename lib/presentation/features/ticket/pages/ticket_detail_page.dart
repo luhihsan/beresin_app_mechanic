@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:mechanic_app/domain/entities/service_ticket_entity.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_cubit.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_state.dart';
 import 'package:mechanic_app/presentation/features/ticket/widgets/add_procurement_sheet.dart';
@@ -11,20 +12,23 @@ class TicketDetailPage extends StatelessWidget {
 
   const TicketDetailPage({super.key, required this.ticketDocumentId});
 
-  void _openAddProcurementForm(BuildContext context, TicketCubit cubit) {
+  // PEMBARUAN: Ditambahkan parameter serviceTicketEntity untuk ekstraksi data ticketId
+  void _openAddProcurementForm(BuildContext context, TicketCubit cubit, ServiceTicketEntity ticket) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         return AddProcurementSheet(
-          onSubmit: (partName, supplierStore, cost, receiptUrl) {
+          // Menerima berkas hasil jepretan kamera dari sheet form
+          onSubmit: (partName, supplierStore, cost, imageFile) {
             cubit.submitExternalProcurement(
               ticketDocId: ticketDocumentId,
+              ticketId: ticket.ticketId, // Meneruskan Alfanumerik ID (Contoh: TKT-20260520-001) untuk path storage
               partName: partName,
               supplierStore: supplierStore,
               cost: cost,
-              receiptPhotoUrl: receiptUrl,
+              imageFile: imageFile, // Meneruskan objek File mentah ke Cubit
             );
           },
         );
@@ -37,9 +41,9 @@ class TicketDetailPage extends StatelessWidget {
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: Colors.blueGrey.shade50, // Menggunakan blueGrey standar material
+      backgroundColor: Colors.blueGrey.shade50,
       appBar: AppBar(
-        title: const Text('RINCIAN TUGAS AKTIF', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.5)),
+        title: const Text('RINCIAN TUGAS AKTIF', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 0.5)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.blueGrey.shade900,
         elevation: 0,
@@ -47,9 +51,9 @@ class TicketDetailPage extends StatelessWidget {
       body: BlocBuilder<TicketCubit, TicketState>(
         builder: (context, state) {
           if (state is TicketLoaded) {
-            // Mencari data tiket spesifik dari local stream snapshot
-            final ticket = state.tickets.firstWhere((element) => element.id == ticketDocumentId, 
-              orElse: () => state.tickets.first // Safety fallback jika rute transisi sangat cepat
+            final ticket = state.tickets.firstWhere(
+              (element) => element.id == ticketDocumentId, 
+              orElse: () => state.tickets.first,
             );
             
             final int totalBelanja = ticket.externalProcurements.fold(0, (sum, item) => sum + item.cost);
@@ -112,7 +116,7 @@ class TicketDetailPage extends StatelessWidget {
                             child: const Column(
                               children: [
                                 Icon(Icons.receipt_long_rounded, size: 48, color: Colors.grey),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 Text('Belum ada nota luar yang diinput', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
                               ],
                             ),
@@ -177,10 +181,10 @@ class TicketDetailPage extends StatelessWidget {
                     top: false,
                     child: Row(
                       children: [
-                        // Tombol Input Nota (Hanya aktif jika status pengerjaan sudah dimulai)
+                        // Tombol Input Nota (Hanya aktif jika status pengerjaan sudah dimulai/processing)
                         if (isProcessing) ...[
                           ElevatedButton(
-                            onPressed: () => _openAddProcurementForm(context, context.read<TicketCubit>()),
+                            onPressed: () => _openAddProcurementForm(context, context.read<TicketCubit>(), ticket),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue.shade50,
                               foregroundColor: Colors.blue.shade900,
@@ -202,7 +206,7 @@ class TicketDetailPage extends StatelessWidget {
                                 cubit.updateStatus(ticketDocId: ticketDocumentId, newStatus: 'processing');
                               } else if (isProcessing) {
                                 cubit.updateStatus(ticketDocId: ticketDocumentId, newStatus: 'completed');
-                                Navigator.pop(context); // Tutup halaman dan kembali ke antrean utama jika selesai
+                                Navigator.pop(context); // Otomatis kembali ke antrean utama jika selesai servis
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -216,7 +220,7 @@ class TicketDetailPage extends StatelessWidget {
                               isWaiting 
                                   ? 'MULAI PROSES KERJA' 
                                   : isProcessing ? 'SELESAIKAN PERBAIKAN' : 'SERVIS SELESAI',
-                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.5),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 0.5),
                             ),
                           ),
                         ),

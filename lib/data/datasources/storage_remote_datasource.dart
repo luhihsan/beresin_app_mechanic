@@ -1,11 +1,10 @@
-// lib/data/datasources/storage_remote_datasource.dart
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:injectable/injectable.dart';
 
 abstract class StorageRemoteDataSource {
-  /// Mengunggah berkas gambar nota ke path 'receipts/TICKET_ID/timestamp.jpg'
-  /// Mengembalikan tautan unduhan (Download URL) berupa String.
+  /// Mengunggah berkas foto nota ke dalam Firebase Storage.
+  /// Mengembalikan tautan unduhan (Download URL) digital berupa [String].
   Future<String> uploadReceiptImage({required String ticketId, required File imageFile});
 }
 
@@ -19,10 +18,11 @@ class StorageRemoteDataSourceImpl implements StorageRemoteDataSource {
   Future<String> uploadReceiptImage({required String ticketId, required File imageFile}) async {
     try {
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      // Menyusun struktur path penyimpanan yang rapi di Firebase Storage
+      
+      // Menyusun struktur direktori penyimpanan yang rapi: receipts/TKT-ID/REF-timestamp.jpg
       final Reference ref = _storage.ref().child('receipts').child(ticketId).child('REF-$timestamp.jpg');
       
-      // Proses unggah berkas dengan metadata content type yang jelas
+      // Proses eksekusi unggah berkas dengan penambahan metadata gambar
       final UploadTask uploadTask = ref.putFile(
         imageFile,
         SettableMetadata(contentType: 'image/jpeg'),
@@ -33,7 +33,7 @@ class StorageRemoteDataSourceImpl implements StorageRemoteDataSource {
       
       return downloadUrl;
     } catch (e) {
-      throw Exception('Gagal mengunggah gambar ke Storage: $e');
+      throw Exception('Gagal mengunggah berkas gambar ke Firebase Storage: $e');
     }
   }
 }

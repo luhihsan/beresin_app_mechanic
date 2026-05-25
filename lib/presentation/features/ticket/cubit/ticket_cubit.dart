@@ -40,41 +40,29 @@ class TicketCubit extends Cubit<TicketState> {
     required String ticketId,
     required String partName,
     required String supplierStore,
-    required int cost, // Nominal harga modal wajib bertipe data Integer (Anti-Floating Point Error)
-    required File? imageFile, // Menggunakan objek File mentah dari jepretan kamera perangkat
+    required int cost,
+    required File? imageFile,
   }) async {
-    // Menyimpan keadaan (state) terakhir sebelum proses mutasi data dilakukan
     final currentState = state;
-    emit(const TicketLoading());
+    emit(const TicketLoading()); // UI otomatis menampilkan indikator circular loading
     
     try {
-      String uploadedPhotoUrl = 'https://firebasestorage.googleapis.com/v0/b/mock-receipt.jpg';
-      
-      // LOGIKA INTEGRASI: Jika berkas gambar dari kamera tersedia, lakukan proses unggah
-      if (imageFile != null) {
-        // TODO: Panggil fungsi upload dari StorageRemoteDataSource atau Repository
-        // contoh: uploadedPhotoUrl = await _storageRepository.uploadImage(ticketId, imageFile);
-      }
-
       final procurement = ExternalProcurementEntity(
         partName: partName,
         supplierStore: supplierStore,
         cost: cost,
-        receiptPhotoUrl: uploadedPhotoUrl,
+        receiptPhotoUrl: 'https://firebasestorage.googleapis.com/v0/b/mock-receipt.jpg', // Tautan dasar cadangan
       );
 
-      // Mengirimkan entitas bisnis pengadaan ke dalam repositori data
+      // Pendelegasian tugas eksekusi upload & save ke layer repositori bisnis
       await _repository.addExternalProcurement(
         ticketDocumentId: ticketDocId,
+        ticketId: ticketId,
         procurement: procurement,
+        imageFile: imageFile,
       );
-      
-      // Catatan: Aliran data (stream) Firestore yang aktif pada fungsi watchMechanicTickets 
-      // akan otomatis memicu pembaruan antarmuka pengguna (UI emittance) secara realtime.
     } catch (e) {
-      emit(TicketError('Gagal menambahkan pengadaan: ${e.toString()}'));
-      
-      // Mengembalikan keadaan antarmuka ke data Loaded sebelumnya jika terjadi kegagalan proses
+      emit(TicketError('Gagal memproses pengadaan barang: ${e.toString()}'));
       if (currentState is TicketLoaded) {
         emit(currentState);
       }

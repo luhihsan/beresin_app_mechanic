@@ -1,11 +1,14 @@
 // lib/presentation/features/ticket/widgets/add_procurement_sheet.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart'; // Pustaka pengelola kamera native
 
 /// Widget [AddProcurementSheet] menyediakan antarmuka lembar bawah (bottom sheet)
 /// utilitarian untuk menginput data pengadaan suku cadang luar oleh mekanik.
 class AddProcurementSheet extends StatefulWidget {
-  final Function(String partName, String supplierStore, int cost, String receiptUrl) onSubmit;
+  // PEMBARUAN: Mengubah parameter ke-4 dari String URL menjadi berkas File fisik objek
+  final Function(String partName, String supplierStore, int cost, File? imageFile) onSubmit;
 
   const AddProcurementSheet({super.key, required this.onSubmit});
 
@@ -19,8 +22,9 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
   final _storeController = TextEditingController();
   final _costController = TextEditingController();
   
-  // Tautan placeholder sebelum integrasi Firebase Storage dilakukan penuh
-  final String _mockReceiptUrl = 'https://firebasestorage.googleapis.com/v0/b/mock-receipt.jpg';
+  // Variabel status internal untuk menyimpan berkas foto nota fisik
+  File? _capturedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void dispose() {
@@ -28,6 +32,31 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
     _storeController.dispose();
     _costController.dispose();
     super.dispose();
+  }
+
+  /// Membuka kamera perangkat secara native untuk mengambil gambar nota fisik luar.
+  Future<void> _takeReceiptPhoto() async {
+    try {
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70, // Kompresi kualitas gambar hingga 70% demi efisiensi RAM & Storage
+      );
+
+      if (photo != null) {
+        setState(() {
+          _capturedImage = File(photo.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengakses kamera perangkat: $e'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    }
   }
 
   void _handleSubmitting() {
@@ -39,7 +68,7 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
         _partNameController.text.trim(),
         _storeController.text.trim(),
         parsedCost,
-        _mockReceiptUrl,
+        _capturedImage, // Mengirimkan objek berkas foto asli hasil jepretan kamera
       );
       
       Navigator.pop(context);
@@ -49,7 +78,7 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      // Mengatur inset bottom secara dinamis mengikuti visibilitas keyboard perangkat
+      // Mengatur inset bottom secara dinamis mengikuti visibilitas keyboard perangkat mekanik
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
@@ -138,29 +167,58 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
               ),
               const SizedBox(height: 24),
 
-              // Komponen Bukti Foto Fisik (Simulasi)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.camera_alt_rounded, color: Color(0xFF3B82F6)),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Lampiran Foto Nota Fisik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
-                          Text('Nota terekam otomatis dalam format .jpg', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                        ],
-                      ),
+              // PEMBARUAN: Komponen Bukti Foto Fisik Interaktif Aktif Kamera
+              InkWell(
+                onTap: _takeReceiptPhoto,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _capturedImage != null ? Colors.green.shade300 : const Color(0xFFE2E8F0),
+                      width: _capturedImage != null ? 2 : 1,
                     ),
-                    Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _capturedImage != null ? Icons.photo_library_rounded : Icons.camera_alt_rounded, 
+                        color: _capturedImage != null ? Colors.green : const Color(0xFF3B82F6),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _capturedImage != null ? 'Foto Nota Terekam' : 'Ambil Foto Nota Fisik', 
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                            ),
+                            Text(
+                              _capturedImage != null 
+                                  ? 'Ketuk kembali untuk mengulang jepretan' 
+                                  : 'Wajib melampirkan foto nota sebagai bukti otentik', 
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_capturedImage != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.file(
+                            _capturedImage!,
+                            height: 40,
+                            width: 40,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      else
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
