@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mechanic_app/core/constants/asset_paths.dart'; 
+import 'package:mechanic_app/core/constants/asset_paths.dart'; // Solusi: Penambahan import AssetPaths secara presisi
 import 'package:mechanic_app/core/di/injection.dart';
 import 'package:mechanic_app/domain/entities/service_ticket_entity.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_cubit.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_state.dart';
-import 'package:mechanic_app/presentation/features/ticket/pages/ticket_detail_page.dart';
+import 'package:mechanic_app/presentation/features/ticket/pages/ticket_detail_page.dart'; // Import halaman detail
 
 class TicketDashboardPage extends StatelessWidget {
   final String mechanicId;
@@ -17,18 +17,18 @@ class TicketDashboardPage extends StatelessWidget {
     return BlocProvider<TicketCubit>(
       create: (context) => getIt<TicketCubit>()..watchMechanicTickets(mechanicId),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Colors.blueGrey.shade50,
         appBar: AppBar(
           title: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'BERESIN GARASI',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF3B82F6), letterSpacing: 1.0),
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.blue, letterSpacing: 1.0),
               ),
               Text(
                 'Antrean Kerja Realtime',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A)),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
               ),
             ],
           ),
@@ -39,11 +39,11 @@ class TicketDashboardPage extends StatelessWidget {
             Container(
               margin: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: Colors.blueGrey.shade100,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
-                icon: const Icon(Icons.sync_rounded, color: Color(0xFF475569)),
+                icon: const Icon(Icons.sync_rounded, color: Colors.black87),
                 onPressed: () => context.read<TicketCubit>().watchMechanicTickets(mechanicId),
               ),
             )
@@ -52,7 +52,7 @@ class TicketDashboardPage extends StatelessWidget {
         body: BlocBuilder<TicketCubit, TicketState>(
           builder: (context, state) {
             if (state is TicketLoading) {
-              return const Center(child: CircularProgressIndicator(color: Color(0xFF1E40AF)));
+              return const Center(child: CircularProgressIndicator(color: Colors.blue));
             }
 
             if (state is TicketError) {
@@ -60,12 +60,12 @@ class TicketDashboardPage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   margin: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded, color: Color(0xFFDC2626)),
+                      const Icon(Icons.error_outline_rounded, color: Colors.red),
                       const SizedBox(width: 12),
-                      Expanded(child: Text('Gangguan sistem: ${state.message}', style: const TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.w600))),
+                      Expanded(child: Text('Gangguan sistem: ${state.message}', style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.w600))),
                     ],
                   ),
                 ),
@@ -84,21 +84,21 @@ class TicketDashboardPage extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(24),
-                          decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
                           child: Image.asset(
-                            AssetPaths.icCalendar, // Solusi: Berhasil mengenali AssetPaths setelah di-import
+                            AssetPaths.icCalendar, // Berhasil membaca indeks file berkat import lengkap
                             height: 56,
                             width: 56,
-                            color: const Color(0xFF3B82F6),
+                            color: Colors.blue,
                             errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.assignment_turned_in_rounded, size: 56, color: Color(0xFF3B82F6));
+                              return const Icon(Icons.assignment_turned_in_rounded, size: 56, color: Colors.blue);
                             },
                           ),
                         ),
                         const SizedBox(height: 20),
-                        const Text('Semua Antrean Bersih!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                        const Text('Semua Antrean Bersih!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                         const SizedBox(height: 6),
-                        const Text('Belum ada penugasan masuk dari dashboard owner.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                        const Text('Belum ada penugasan masuk dari dashboard owner.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ),
@@ -109,7 +109,7 @@ class TicketDashboardPage extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                 itemCount: activeTickets.length,
                 itemBuilder: (context, index) {
-                  return _PremiumTicketCard(ticket: activeTickets[index]);
+                  return _ModernTicketCard(ticket: activeTickets[index]); // Sinkron: menggunakan _ModernTicketCard
                 },
               );
             }
@@ -122,15 +122,15 @@ class TicketDashboardPage extends StatelessWidget {
   }
 }
 
-class _PremiumTicketCard extends StatelessWidget {
+class _ModernTicketCard extends StatelessWidget {
   final ServiceTicketEntity ticket;
 
-  const _PremiumTicketCard({required this.ticket});
+  const _ModernTicketCard({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
     final isProcessing = ticket.status == 'processing';
-    final accentColor = isProcessing ? const Color(0xFF2563EB) : const Color(0xFFD97706);
+    final accentColor = isProcessing ? Colors.blue.shade700 : Colors.orange.shade800;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -139,26 +139,24 @@ class _PremiumTicketCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            // Solusi: Mengganti .withOpacity dengan .withValues
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            color: Colors.blueGrey.withOpacity(0.04), // Perbaikan: menggunakan opsitas aman beralaskan material blueGrey
             blurRadius: 14,
             offset: const Offset(0, 4),
           )
         ],
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: Colors.blueGrey.shade100),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: () {
-            // Ambil instance TicketCubit yang aktif saat ini dari context dashboard
             final currentTicketCubit = context.read<TicketCubit>();
 
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => BlocProvider<TicketCubit>.value(
-                  value: currentTicketCubit, // Meneruskan instance cubit yang sama agar sync data terjaga
+                  value: currentTicketCubit,
                   child: TicketDetailPage(ticketDocumentId: ticket.id),
                 ),
               ),
@@ -178,34 +176,33 @@ class _PremiumTicketCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.confirmation_number_outlined, size: 16, color: Color(0xFF94A3B8)),
+                            const Icon(Icons.confirmation_number_outlined, size: 16, color: Colors.grey),
                             const SizedBox(width: 6),
-                            Text(ticket.ticketId, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontSize: 13)),
+                            Text(ticket.ticketId, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 13)),
                           ],
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            // Solusi: Mengganti .withOpacity dengan .withValues
-                            color: accentColor.withValues(alpha: 0.1),
+                            color: accentColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: Text(
                             isProcessing ? 'DIKERJAKAN' : 'ANTREAN',
-                            style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
+                            style: TextStyle(color: accentColor, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 18),
                     
-                    const Text('TUGAS PERBAIKAN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
+                    const Text('TUGAS PERBAIKAN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
                     const SizedBox(height: 4),
-                    Text(ticket.tasks, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                    Text(ticket.tasks, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
                     
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Divider(color: Color(0xFFF1F5F9), height: 1),
+                      child: Divider(color: Colors.black12, height: 1),
                     ),
 
                     Row(
@@ -215,15 +212,15 @@ class _PremiumTicketCard extends StatelessWidget {
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
-                              child: const Icon(Icons.speed_rounded, size: 18, color: Color(0xFF475569)),
+                              decoration: BoxDecoration(color: Colors.blueGrey.shade50, borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(Icons.speed_rounded, size: 18, color: Colors.blueGrey),
                             ),
                             const SizedBox(width: 10),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('KM CHECK-IN', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
-                                Text('${ticket.kmCheckIn} KM', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                const Text('KM CHECK-IN', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                Text('${ticket.kmCheckIn} KM', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
                               ],
                             )
                           ],

@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Widget [AddProcurementSheet] menyediakan antarmuka lembar bawah (bottom sheet)
+/// utilitarian untuk menginput data pengadaan suku cadang luar oleh mekanik.
 class AddProcurementSheet extends StatefulWidget {
   final Function(String partName, String supplierStore, int cost, String receiptUrl) onSubmit;
 
@@ -17,7 +19,7 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
   final _storeController = TextEditingController();
   final _costController = TextEditingController();
   
-  // Placeholder URL foto nota fisik sebelum integrasi Firebase Storage penuh
+  // Tautan placeholder sebelum integrasi Firebase Storage dilakukan penuh
   final String _mockReceiptUrl = 'https://firebasestorage.googleapis.com/v0/b/mock-receipt.jpg';
 
   @override
@@ -30,8 +32,8 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
 
   void _handleSubmitting() {
     if (_formKey.currentState!.validate()) {
-      // Mengonversi input teks string menjadi Integer murni (Anti-Floating Point Error)
-      final int parsedCost = int.parse(_costController.text.replaceAll('.', ''));
+      // GOLDEN RULE: Menghapus seluruh karakter non-digit dan melakukan parsing ke Integer murni
+      final int parsedCost = int.parse(_costController.text.replaceAll(RegExp(r'[^0-9]'), ''));
       
       widget.onSubmit(
         _partNameController.text.trim(),
@@ -40,16 +42,14 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
         _mockReceiptUrl,
       );
       
-      Navigator.pop(context); // Tutup lembar bottom sheet setelah sukses
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Padding(
-      // Mengatur posisi sheet agar otomatis naik saat keyboard HP mekanik muncul
+      // Mengatur inset bottom secara dinamis mengikuti visibilitas keyboard perangkat
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
@@ -63,54 +63,57 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Top Indicator Bar Drag Icon
               Center(
                 child: Container(
                   height: 4,
                   width: 40,
-                  decoration: BoxDecoration(color: Colors.blueGrey.shade300, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.shade300, 
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
-                'INPUT NOTA REIMBURSEMENT',
+                'INPUT NOTA PENGADAAN BARANG',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A), letterSpacing: 0.5),
               ),
+              const SizedBox(height: 4),
               const Text(
-                'Pastikan data toko dan nominal sesuai dengan nota fisik asli.',
-                style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.w500),
+                'Mekanik wajib menginput data harga modal asli sesuai dengan bukti nota fisik toko.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 24),
 
-              // Input Nama Suku Cadang / Oli
+              // Bidang Input Nama Suku Cadang / Oli
               TextFormField(
                 controller: _partNameController,
                 textInputAction: TextInputAction.next,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 decoration: InputDecoration(
-                  labelText: 'Nama Barang / Suku Cadang',
+                  labelText: 'Nama Suku Cadang / Oli',
                   prefixIcon: const Icon(Icons.precision_manufacturing_rounded),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                validator: (value) => value == null || value.trim().isEmpty ? 'Nama barang wajib diisi' : null,
+                validator: (value) => value == null || value.trim().isEmpty ? 'Nama barang tidak boleh kosong' : null,
               ),
               const SizedBox(height: 16),
 
-              // Input Nama Toko / Supplier Luar
+              // Bidang Input Toko Pembelian
               TextFormField(
                 controller: _storeController,
                 textInputAction: TextInputAction.next,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 decoration: InputDecoration(
-                  labelText: 'Toko Supplier / Bengkel Luar',
+                  labelText: 'Nama Toko / Supplier Luar',
                   prefixIcon: const Icon(Icons.storefront_rounded),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                validator: (value) => value == null || value.trim().isEmpty ? 'Nama toko wajib diisi' : null,
+                validator: (value) => value == null || value.trim().isEmpty ? 'Nama toko tidak boleh kosong' : null,
               ),
               const SizedBox(height: 16),
 
-              // Input Harga Modal Barang (Integer Validated)
+              // Bidang Input Harga Beli (Hanya menerima Angka)
               TextFormField(
                 controller: _costController,
                 keyboardType: TextInputType.number,
@@ -118,7 +121,7 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
                 onFieldSubmitted: (_) => _handleSubmitting(),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E40AF)),
                 inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly, // Menolak karakter selain angka desimal murni
+                  FilteringTextInputFormatter.digitsOnly, // Proteksi dari input karakter teks luar
                 ],
                 decoration: InputDecoration(
                   labelText: 'Harga Beli Modal (Total)',
@@ -128,52 +131,53 @@ class _AddProcurementSheetState extends State<AddProcurementSheet> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Nominal harga wajib diisi';
-                  if (int.tryParse(value) == null) return 'Format angka tidak valid';
+                  if (value == null || value.isEmpty) return 'Nominal pengeluaran wajib diisi';
+                  if (int.tryParse(value) == null) return 'Format angka numerik tidak valid';
                   return null;
                 },
               ),
               const SizedBox(height: 24),
 
-              // Simulasi Input Dokumen Foto Nota Fisik
+              // Komponen Bukti Foto Fisik (Simulasi)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blueGrey.shade50,
+                  color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blueGrey.shade200),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.camera_alt_rounded, color: Colors.blue),
+                    Icon(Icons.camera_alt_rounded, color: Color(0xFF3B82F6)),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Foto Nota Fisik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          Text('Nota Otomatis Tersimpan Aman (.jpg)', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          Text('Lampiran Foto Nota Fisik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+                          Text('Nota terekam otomatis dalam format .jpg', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                         ],
                       ),
                     ),
-                    Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
+                    Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
 
-              // Tombol Submit Form Pengadaan
+              // Tombol Aksi Penyimpanan Dokumen Belanja
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _handleSubmitting,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
                     backgroundColor: const Color(0xFF1E40AF),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
                   ),
-                  child: const Text('SIMPAN NOTA PENGADAAN', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  child: const Text('SIMPAN DATA PENGADAAN', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5, fontSize: 14)),
                 ),
               ),
             ],

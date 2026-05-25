@@ -1,6 +1,7 @@
+// lib/presentation/features/auth/pages/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mechanic_app/core/constants/asset_paths.dart'; // Solusi: Menambahkan import AssetPaths secara absolut
+import 'package:mechanic_app/core/constants/asset_paths.dart'; // Import aset tersentralisasi
 import 'package:mechanic_app/presentation/features/auth/cubit/auth_cubit.dart';
 import 'package:mechanic_app/presentation/features/auth/cubit/auth_state.dart';
 
@@ -38,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Slate 50 premium grey background
+      backgroundColor: Colors.blueGrey.shade50, // Menggunakan warna standar material blueGrey
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
@@ -51,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
                     Text('Selamat bekerja, ${state.user.name}!'),
                   ],
                 ),
-                backgroundColor: const Color(0xFF059669), // Emerald 600
+                backgroundColor: Colors.green.shade700,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -67,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                     Expanded(child: Text(state.errorMessage!)),
                   ],
                 ),
-                backgroundColor: const Color(0xFFDC2626), // Red 600
+                backgroundColor: Colors.red.shade700,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -84,7 +85,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Brand Logo Component dengan pengaman hiasan bayangan modern
+                    // Brand Logo Area dengan jaminan Fallback Layer jika file belum ada
                     Center(
                       child: Container(
                         height: 100,
@@ -94,8 +95,7 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
-                              // Solusi: Mengganti .withOpacity dengan .withValues sesuai standar SDK modern
-                              color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                              color: Colors.blueGrey.withOpacity(0.15),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             )
@@ -104,13 +104,13 @@ class _LoginPageState extends State<LoginPage> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(28),
                           child: Image.asset(
-                            AssetPaths.logoMain, // Solusi: Memperbaiki typo dari AssetPath ke AssetPaths
+                            AssetPaths.logoMain, // Memanggil dari konstanta AssetPaths yang benar
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
+                                    colors: [Colors.blue.shade900, Colors.blue.shade600],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
@@ -132,51 +132,61 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Beresin Garasi',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w900, // Perbaikan: menggunakan FontWeight.w900
+                        color: Colors.blueGrey.shade900,
+                        letterSpacing: -1.0,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       'Portal Otentikasi Operasional Mekanik',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF64748B),
+                        color: Colors.blueGrey.shade600,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 44),
 
-                    // Bidang Input Data Kredensial
+                    // Bidang Formulir Input
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4, bottom: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 8),
                           child: Text(
                             'EMAIL KREDENSIAL',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569), letterSpacing: 1.0),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade700, letterSpacing: 1.0),
                           ),
                         ),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blueGrey.shade900),
                           decoration: InputDecoration(
                             hintText: 'mekanik@beresingarasi.com',
-                            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.normal),
-                            prefixIcon: const Icon(Icons.alternate_email_rounded, color: Color(0xFF64748B)),
+                            hintStyle: TextStyle(color: Colors.blueGrey.shade300, fontWeight: FontWeight.normal),
+                            prefixIcon: const Icon(Icons.alternate_email_rounded, color: Colors.blueGrey),
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: BorderSide(color: Colors.blueGrey.shade200),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: BorderSide(color: Colors.blueGrey.shade200),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const Color(0xFF3B82F6) == Colors.blue ? const BorderSide(color: Color(0xFF3B82F6), width: 2) : BorderSide.none,
+                              borderSide: const BorderSide(color: Colors.blue, width: 2),
                             ),
                           ),
                           validator: (value) {
@@ -187,11 +197,11 @@ class _LoginPageState extends State<LoginPage> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4, bottom: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 8),
                           child: Text(
                             'KATA SANDI',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569), letterSpacing: 1.0),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade700, letterSpacing: 1.0),
                           ),
                         ),
                         TextFormField(
@@ -199,30 +209,30 @@ class _LoginPageState extends State<LoginPage> {
                           obscureText: !_isPasswordVisible,
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _onLoginSubmitted(),
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blueGrey.shade900),
                           decoration: InputDecoration(
                             hintText: '••••••••',
-                            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.normal),
-                            prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF64748B)),
+                            hintStyle: TextStyle(color: Colors.blueGrey.shade300, fontWeight: FontWeight.normal),
+                            prefixIcon: const Icon(Icons.lock_outline_rounded, color: Colors.blueGrey),
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: BorderSide(color: Colors.blueGrey.shade200),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: BorderSide(color: Colors.blueGrey.shade200),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                              borderSide: const BorderSide(color: Colors.blue, width: 2),
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _isPasswordVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: const Color(0xFF64748B),
+                                color: Colors.blueGrey.shade600,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -242,7 +252,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 36),
 
-                    // Tombol Konfirmasi Masuk
+                    // Button Action
                     BlocBuilder<AuthCubit, AuthState>(
                       builder: (context, state) {
                         final isLoading = state is AuthLoading;
@@ -253,8 +263,7 @@ class _LoginPageState extends State<LoginPage> {
                             boxShadow: [
                               if (!isLoading)
                                 BoxShadow(
-                                  // Solusi: Menggunakan .withValues() standar modern SDK
-                                  color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                                  color: Colors.blue.shade900.withOpacity(0.25),
                                   blurRadius: 16,
                                   offset: const Offset(0, 6),
                                 )
@@ -264,9 +273,9 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: isLoading ? null : _onLoginSubmitted,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 18),
-                              backgroundColor: const Color(0xFF1E40AF),
+                              backgroundColor: Colors.blue.shade900,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: const Color(0xFF93C5FD),
+                              disabledBackgroundColor: Colors.blue.shade200,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               elevation: 0,
                             ),
@@ -280,7 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   )
                                 : const Text(
-                                    'Masuk',
+                                    'MASUK OPERASIONAL BENGKEL',
                                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                                   ),
                           ),
