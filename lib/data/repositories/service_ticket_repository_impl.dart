@@ -32,4 +32,12 @@ class ServiceTicketRepositoryImpl implements ServiceTicketRepository {
       procurement: model,
     );
   }
+
+  @override
+  Future<void> updateTicketStatus({required String ticketDocumentId, required String status}) async {
+    await _remoteDataSource.updateTicketStatus(
+      documentId: ticketDocumentId,
+      status: status,
+    );
+  }
 }

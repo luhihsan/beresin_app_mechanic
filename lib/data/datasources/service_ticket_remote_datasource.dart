@@ -14,6 +14,8 @@ abstract class ServiceTicketRemoteDataSource {
     required String documentId,
     required ExternalProcurementModel procurement,
   });
+
+  Future<void> updateTicketStatus({required String documentId, required String status});
 }
 
 @LazySingleton(as: ServiceTicketRemoteDataSource)
@@ -49,6 +51,13 @@ class ServiceTicketRemoteDataSourceImpl implements ServiceTicketRemoteDataSource
       'externalProcurements': FieldValue.arrayUnion([
         procurement.toJson(),
       ]),
+    });
+  }
+
+  @override
+  Future<void> updateTicketStatus({required String documentId, required String status}) async {
+    await _firestore.collection('serviceTickets').doc(documentId).update({
+      'status': status,
     });
   }
 }

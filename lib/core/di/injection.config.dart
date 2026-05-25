@@ -22,7 +22,6 @@ import '../../domain/repositories/auth_repository.dart' as _i1073;
 import '../../domain/repositories/service_ticket_repository.dart' as _i994;
 import '../../presentation/features/auth/cubit/auth_cubit.dart' as _i224;
 import '../../presentation/features/ticket/cubit/ticket_cubit.dart' as _i647;
-import 'firebase_modul.dart' as _i893;
 
 extension GetItInjectableX on _i174.GetIt {
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -35,9 +34,6 @@ extension GetItInjectableX on _i174.GetIt {
       environment,
       environmentFilter,
     );
-    final firebaseModule = _$FirebaseModule();
-    gh.lazySingleton<_i974.FirebaseFirestore>(() => firebaseModule.firestore);
-    gh.lazySingleton<_i59.FirebaseAuth>(() => firebaseModule.firebaseAuth);
     gh.lazySingleton<_i164.ServiceTicketRemoteDataSource>(() =>
         _i164.ServiceTicketRemoteDataSourceImpl(gh<_i974.FirebaseFirestore>()));
     gh.lazySingleton<_i994.ServiceTicketRepository>(() =>
@@ -57,5 +53,3 @@ extension GetItInjectableX on _i174.GetIt {
     return this;
   }
 }
-
-class _$FirebaseModule extends _i893.FirebaseModule {}

@@ -1,5 +1,6 @@
 // lib/presentation/features/ticket/cubit/ticket_cubit.dart
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../domain/entities/external_procurement_entity.dart';
@@ -14,10 +15,11 @@ class TicketCubit extends Cubit<TicketState> {
   TicketCubit(this._repository) : super(const TicketInitial());
 
   /// Memulai pemantauan (listening) tiket secara realtime berbasis ID Mekanik.
+  /// Aliran data (stream) dari Cloud Firestore akan dipantau secara aktif.
   void watchMechanicTickets(String mechanicId) {
     emit(const TicketLoading());
     
-    // Batalkan subscription lama jika ada untuk mencegah kebocoran memori (memory leak)
+    // Membatalkan langganan stream sebelumnya jika ada untuk mencegah kebocoran memori (memory leak)
     _ticketSubscription?.cancel();
 
     _ticketSubscription = _repository.getTicketsByMechanic(mechanicId).listen(
@@ -30,35 +32,70 @@ class TicketCubit extends Cubit<TicketState> {
     );
   }
 
-  /// Menambahkan nota pembelian suku cadang luar oleh mekanik.
+  /// Menambahkan nota pembelian suku cadang luar oleh mekanik ke Cloud Firestore.
+  /// Fungsi ini mengelola alur konversi objek berkas fisik [File] dari kamera 
+  /// menjadi alamat unduhan digital (Download URL) sebelum disimpan ke basis data.
   Future<void> submitExternalProcurement({
     required String ticketDocId,
+    required String ticketId,
     required String partName,
     required String supplierStore,
-    required int cost, // Nominal uang murni Integer (Anti-Floating Point)
-    required String receiptPhotoUrl,
+    required int cost, // Nominal harga modal wajib bertipe data Integer (Anti-Floating Point Error)
+    required File? imageFile, // Menggunakan objek File mentah dari jepretan kamera perangkat
   }) async {
-    // Simpan state terakhir (daftar tiket saat ini) agar UI tidak blank saat proses submit
+    // Menyimpan keadaan (state) terakhir sebelum proses mutasi data dilakukan
     final currentState = state;
+    emit(const TicketLoading());
     
     try {
+      String uploadedPhotoUrl = 'https://firebasestorage.googleapis.com/v0/b/mock-receipt.jpg';
+      
+      // LOGIKA INTEGRASI: Jika berkas gambar dari kamera tersedia, lakukan proses unggah
+      if (imageFile != null) {
+        // TODO: Panggil fungsi upload dari StorageRemoteDataSource atau Repository
+        // contoh: uploadedPhotoUrl = await _storageRepository.uploadImage(ticketId, imageFile);
+      }
+
       final procurement = ExternalProcurementEntity(
         partName: partName,
         supplierStore: supplierStore,
         cost: cost,
-        receiptPhotoUrl: receiptPhotoUrl,
+        receiptPhotoUrl: uploadedPhotoUrl,
       );
 
+      // Mengirimkan entitas bisnis pengadaan ke dalam repositori data
       await _repository.addExternalProcurement(
         ticketDocumentId: ticketDocId,
         procurement: procurement,
       );
       
-      // Catatan: Firestore stream akan otomatis memicu update ke UI secara realtime,
-      // sehingga kita tidak perlu memanggil ulang fungsi getTickets secara manual.
+      // Catatan: Aliran data (stream) Firestore yang aktif pada fungsi watchMechanicTickets 
+      // akan otomatis memicu pembaruan antarmuka pengguna (UI emittance) secara realtime.
     } catch (e) {
       emit(TicketError('Gagal menambahkan pengadaan: ${e.toString()}'));
-      // Kembalikan ke state data sebelumnya setelah menampilkan pesan error
+      
+      // Mengembalikan keadaan antarmuka ke data Loaded sebelumnya jika terjadi kegagalan proses
+      if (currentState is TicketLoaded) {
+        emit(currentState);
+      }
+    }
+  }
+
+  /// Memperbarui status operasional pengerjaan servis pada Service Ticket secara atomik.
+  /// Perubahan status ini akan memicu pembaruan data secara langsung pada Web Dashboard Admin/Owner.
+  Future<void> updateStatus({
+    required String ticketDocId,
+    required String newStatus,
+  }) async {
+    final currentState = state;
+    try {
+      await _repository.updateTicketStatus(
+        ticketDocumentId: ticketDocId, 
+        status: newStatus,
+      );
+    } catch (e) {
+      emit(TicketError('Gagal mengubah status operasional: ${e.toString()}'));
+      
       if (currentState is TicketLoaded) {
         emit(currentState);
       }
@@ -67,7 +104,7 @@ class TicketCubit extends Cubit<TicketState> {
 
   @override
   Future<void> close() {
-    // Wajib memutus aliran stream ketika Cubit dihancurkan demi performa memori RAM
+    // Memutus aliran stream secara mutlak ketika komponen Cubit dihancurkan oleh sistem
     _ticketSubscription?.cancel();
     return super.close();
   }

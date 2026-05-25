@@ -13,4 +13,6 @@ abstract class ServiceTicketRepository {
     required String ticketDocumentId,
     required ExternalProcurementEntity procurement,
   });
+
+  Future<void> updateTicketStatus({required String ticketDocumentId, required String status});
 }
