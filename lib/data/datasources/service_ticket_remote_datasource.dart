@@ -4,18 +4,20 @@ import 'package:injectable/injectable.dart';
 import '../models/external_procurement_model.dart';
 import '../models/service_ticket_model.dart';
 
-/// Kontrak data source untuk mendefinisikan operasi database Firestore.
 abstract class ServiceTicketRemoteDataSource {
-  /// Aliran data realtime untuk memantau tiket berdasarkan ID Mekanik.
   Stream<List<ServiceTicketModel>> streamTicketsByMechanic(String mechanicId);
-
-  /// Menambahkan pengadaan suku cadang luar secara atomik.
   Future<void> addExternalProcurement({
     required String documentId,
     required ExternalProcurementModel procurement,
   });
-
   Future<void> updateTicketStatus({required String documentId, required String status});
+  
+  // BARU: Kontrak untuk menyelesaikan tugas montir secara terintegrasi
+  Future<void> completeTicketTask({
+    required String documentId,
+    required int kmService,
+    required int invoiceAmount,
+  });
 }
 
 @LazySingleton(as: ServiceTicketRemoteDataSource)
@@ -33,8 +35,8 @@ class ServiceTicketRemoteDataSourceImpl implements ServiceTicketRemoteDataSource
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        data['id'] = doc.id; // Menyisipkan Document ID asli Firestore ke field objek
-        return ServiceTicketModel.fromJson(data);
+        // FIX ERROR: Mengirimkan data JSON map beserta doc.id asli Firestore secara manual
+        return ServiceTicketModel.fromJson(data, doc.id);
       }).toList();
     });
   }
@@ -45,8 +47,6 @@ class ServiceTicketRemoteDataSourceImpl implements ServiceTicketRemoteDataSource
     required ExternalProcurementModel procurement,
   }) async {
     final docRef = _firestore.collection('serviceTickets').doc(documentId);
-
-    // GOLDEN RULE: arrayUnion menjamin data tidak menimpa array lama (thread-safe)
     await docRef.update({
       'externalProcurements': FieldValue.arrayUnion([
         procurement.toJson(),
@@ -58,6 +58,19 @@ class ServiceTicketRemoteDataSourceImpl implements ServiceTicketRemoteDataSource
   Future<void> updateTicketStatus({required String documentId, required String status}) async {
     await _firestore.collection('serviceTickets').doc(documentId).update({
       'status': status,
+    });
+  }
+
+  @override
+  Future<void> completeTicketTask({
+    required String documentId,
+    required int kmService,
+    required int invoiceAmount,
+  }) async {
+    await _firestore.collection('serviceTickets').doc(documentId).update({
+      'status': 'completed',
+      'kmService': kmService,
+      'invoiceAmount': invoiceAmount,
     });
   }
 }

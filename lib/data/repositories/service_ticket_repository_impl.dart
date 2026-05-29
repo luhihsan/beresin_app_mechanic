@@ -5,13 +5,14 @@ import '../../domain/entities/external_procurement_entity.dart';
 import '../../domain/entities/service_ticket_entity.dart';
 import '../../domain/repositories/service_ticket_repository.dart';
 import '../datasources/service_ticket_remote_datasource.dart';
-import '../datasources/storage_remote_datasource.dart'; // Import data source baru
+import '../datasources/storage_remote_datasource.dart';
 import '../models/external_procurement_model.dart';
+import '../models/service_ticket_model.dart'; // Import aman karena sudah Vanilla Dart
 
 @LazySingleton(as: ServiceTicketRepository)
 class ServiceTicketRepositoryImpl implements ServiceTicketRepository {
   final ServiceTicketRemoteDataSource _remoteDataSource;
-  final StorageRemoteDataSource _storageRemoteDataSource; // Deklarasi dependensi baru
+  final StorageRemoteDataSource _storageRemoteDataSource;
 
   ServiceTicketRepositoryImpl(this._remoteDataSource, this._storageRemoteDataSource);
 
@@ -31,7 +32,6 @@ class ServiceTicketRepositoryImpl implements ServiceTicketRepository {
   }) async {
     String finalPhotoUrl = procurement.receiptPhotoUrl;
 
-    // ALUR SEQUENTIAL: Jika berkas gambar dari kamera tersedia, unggah ke Storage dahulu
     if (imageFile != null) {
       finalPhotoUrl = await _storageRemoteDataSource.uploadReceiptImage(
         ticketId: ticketId,
@@ -39,7 +39,6 @@ class ServiceTicketRepositoryImpl implements ServiceTicketRepository {
       );
     }
 
-    // Memperbarui objek entitas dengan URL unduhan resmi dari Firebase Storage
     final updatedProcurement = ExternalProcurementEntity(
       partName: procurement.partName,
       supplierStore: procurement.supplierStore,
@@ -58,5 +57,18 @@ class ServiceTicketRepositoryImpl implements ServiceTicketRepository {
   @override
   Future<void> updateTicketStatus({required String ticketDocumentId, required String status}) async {
     await _remoteDataSource.updateTicketStatus(documentId: ticketDocumentId, status: status);
+  }
+
+  @override
+  Future<void> completeTicketTask({
+    required String ticketDocumentId,
+    required int kmService,
+    required int invoiceAmount,
+  }) async {
+    await _remoteDataSource.completeTicketTask(
+      documentId: ticketDocumentId,
+      kmService: kmService,
+      invoiceAmount: invoiceAmount,
+    );
   }
 }

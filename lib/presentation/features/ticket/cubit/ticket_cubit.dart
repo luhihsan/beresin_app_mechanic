@@ -14,14 +14,10 @@ class TicketCubit extends Cubit<TicketState> {
 
   TicketCubit(this._repository) : super(const TicketInitial());
 
-  /// Memulai pemantauan (listening) tiket secara realtime berbasis ID Mekanik.
-  /// Aliran data (stream) dari Cloud Firestore akan dipantau secara aktif.
+  /// Membuka aliran stream real-time untuk memantau tiket aktif montir (Langkah A)
   void watchMechanicTickets(String mechanicId) {
     emit(const TicketLoading());
-    
-    // Membatalkan langganan stream sebelumnya jika ada untuk mencegah kebocoran memori (memory leak)
     _ticketSubscription?.cancel();
-
     _ticketSubscription = _repository.getTicketsByMechanic(mechanicId).listen(
       (tickets) {
         emit(TicketLoaded(tickets));
@@ -32,9 +28,22 @@ class TicketCubit extends Cubit<TicketState> {
     );
   }
 
-  /// Menambahkan nota pembelian suku cadang luar oleh mekanik ke Cloud Firestore.
-  /// Fungsi ini mengelola alur konversi objek berkas fisik [File] dari kamera 
-  /// menjadi alamat unduhan digital (Download URL) sebelum disimpan ke basis data.
+  /// Memperbarui mutasi pelacakan status tiket (waiting -> processing)
+  Future<void> updateStatus({
+    required String ticketDocId,
+    required String newStatus,
+  }) async {
+    try {
+      await _repository.updateTicketStatus(
+        ticketDocumentId: ticketDocId,
+        status: newStatus,
+      );
+    } catch (e) {
+      emit(TicketError('Gagal memperbarui status: ${e.toString()}'));
+    }
+  }
+
+  /// Mengirimkan dokumentasi pengadaan suku cadang eksternal luar bengkel
   Future<void> submitExternalProcurement({
     required String ticketDocId,
     required String ticketId,
@@ -43,18 +52,13 @@ class TicketCubit extends Cubit<TicketState> {
     required int cost,
     required File? imageFile,
   }) async {
-    final currentState = state;
-    emit(const TicketLoading()); // UI otomatis menampilkan indikator circular loading
-    
     try {
       final procurement = ExternalProcurementEntity(
         partName: partName,
         supplierStore: supplierStore,
         cost: cost,
-        receiptPhotoUrl: 'https://firebasestorage.googleapis.com/v0/b/mock-receipt.jpg', // Tautan dasar cadangan
+        receiptPhotoUrl: '',
       );
-
-      // Pendelegasian tugas eksekusi upload & save ke layer repositori bisnis
       await _repository.addExternalProcurement(
         ticketDocumentId: ticketDocId,
         ticketId: ticketId,
@@ -62,28 +66,27 @@ class TicketCubit extends Cubit<TicketState> {
         imageFile: imageFile,
       );
     } catch (e) {
-      emit(TicketError('Gagal memproses pengadaan barang: ${e.toString()}'));
-      if (currentState is TicketLoaded) {
-        emit(currentState);
-      }
+      emit(TicketError('Gagal menambah pengadaan: ${e.toString()}'));
     }
   }
 
-  /// Memperbarui status operasional pengerjaan servis pada Service Ticket secara atomik.
-  /// Perubahan status ini akan memicu pembaruan data secara langsung pada Web Dashboard Admin/Owner.
-  Future<void> updateStatus({
+  /// FIX ERROR: Protokol Penyelesaian Tugas Lapangan (Langkah C)
+  /// Fungsi ini sekarang menerima data kilometer aktual dan nominal tagihan final
+  Future<void> completeService({
     required String ticketDocId,
-    required String newStatus,
+    required int kmService,
+    required int invoiceAmount,
   }) async {
     final currentState = state;
+    emit(const TicketLoading());
     try {
-      await _repository.updateTicketStatus(
-        ticketDocumentId: ticketDocId, 
-        status: newStatus,
+      await _repository.completeTicketTask(
+        ticketDocumentId: ticketDocId,
+        kmService: kmService,
+        invoiceAmount: invoiceAmount,
       );
     } catch (e) {
-      emit(TicketError('Gagal mengubah status operasional: ${e.toString()}'));
-      
+      emit(TicketError('Gagal menyelesaikan servis: ${e.toString()}'));
       if (currentState is TicketLoaded) {
         emit(currentState);
       }
@@ -92,7 +95,6 @@ class TicketCubit extends Cubit<TicketState> {
 
   @override
   Future<void> close() {
-    // Memutus aliran stream secara mutlak ketika komponen Cubit dihancurkan oleh sistem
     _ticketSubscription?.cancel();
     return super.close();
   }

@@ -1,11 +1,12 @@
+// lib/presentation/features/ticket/pages/ticket_dashboard_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mechanic_app/core/constants/asset_paths.dart'; // Solusi: Penambahan import AssetPaths secara presisi
+import 'package:mechanic_app/core/constants/asset_paths.dart';
 import 'package:mechanic_app/core/di/injection.dart';
 import 'package:mechanic_app/domain/entities/service_ticket_entity.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_cubit.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_state.dart';
-import 'package:mechanic_app/presentation/features/ticket/pages/ticket_detail_page.dart'; // Import halaman detail
+import 'package:mechanic_app/presentation/features/ticket/pages/ticket_detail_page.dart';
 
 class TicketDashboardPage extends StatelessWidget {
   final String mechanicId;
@@ -86,7 +87,7 @@ class TicketDashboardPage extends StatelessWidget {
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
                           child: Image.asset(
-                            AssetPaths.icCalendar, // Berhasil membaca indeks file berkat import lengkap
+                            AssetPaths.icCalendar,
                             height: 56,
                             width: 56,
                             color: Colors.blue,
@@ -109,7 +110,7 @@ class TicketDashboardPage extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                 itemCount: activeTickets.length,
                 itemBuilder: (context, index) {
-                  return _ModernTicketCard(ticket: activeTickets[index]); // Sinkron: menggunakan _ModernTicketCard
+                  return _ModernTicketCard(ticket: activeTickets[index]);
                 },
               );
             }
@@ -131,6 +132,7 @@ class _ModernTicketCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isProcessing = ticket.status == 'processing';
     final accentColor = isProcessing ? Colors.blue.shade700 : Colors.orange.shade800;
+    final badgeBgColor = isProcessing ? Colors.blue.shade50 : Colors.orange.shade50;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -139,7 +141,7 @@ class _ModernTicketCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.blueGrey.withOpacity(0.04), // Perbaikan: menggunakan opsitas aman beralaskan material blueGrey
+            color: Colors.blueGrey.withAlpha(10),
             blurRadius: 14,
             offset: const Offset(0, 4),
           )
@@ -184,7 +186,7 @@ class _ModernTicketCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: accentColor.withOpacity(0.1),
+                            color: badgeBgColor,
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: Text(
@@ -194,14 +196,42 @@ class _ModernTicketCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
+                    
+                    // PENYESUAIAN BANNER MOBIL: Mengakses data Entity menggunakan Dot (.) Notation
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.directions_car_filled_rounded, color: Colors.blueGrey, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${ticket.carDetails.brand} ${ticket.carDetails.type}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                                ),
+                                Text(
+                                  'No. Polisi: ${ticket.carDetails.plate} | ${ticket.carDetails.color}',
+                                  style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     
                     const Text('TUGAS PERBAIKAN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
                     const SizedBox(height: 4),
-                    Text(ticket.tasks, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    Text(ticket.tasks, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87)),
                     
                     const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 14),
                       child: Divider(color: Colors.black12, height: 1),
                     ),
 

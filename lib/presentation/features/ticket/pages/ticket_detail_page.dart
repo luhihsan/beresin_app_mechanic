@@ -12,7 +12,6 @@ class TicketDetailPage extends StatelessWidget {
 
   const TicketDetailPage({super.key, required this.ticketDocumentId});
 
-  // PEMBARUAN: Ditambahkan parameter serviceTicketEntity untuk ekstraksi data ticketId
   void _openAddProcurementForm(BuildContext context, TicketCubit cubit, ServiceTicketEntity ticket) {
     showModalBottomSheet(
       context: context,
@@ -20,17 +19,85 @@ class TicketDetailPage extends StatelessWidget {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         return AddProcurementSheet(
-          // Menerima berkas hasil jepretan kamera dari sheet form
           onSubmit: (partName, supplierStore, cost, imageFile) {
             cubit.submitExternalProcurement(
               ticketDocId: ticketDocumentId,
-              ticketId: ticket.ticketId, // Meneruskan Alfanumerik ID (Contoh: TKT-20260520-001) untuk path storage
+              ticketId: ticket.ticketId,
               partName: partName,
               supplierStore: supplierStore,
               cost: cost,
-              imageFile: imageFile, // Meneruskan objek File mentah ke Cubit
+              imageFile: imageFile,
             );
           },
+        );
+      },
+    );
+  }
+
+  // BARU: Protokol Dialog Penutupan Validasi Tugas (Langkah C)
+  void _showCompletionDialog(BuildContext context, TicketCubit cubit, String docId) {
+    final odometerController = TextEditingController();
+    final invoiceController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Text('INPUT REALISASI KERJA BENGKEL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: odometerController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Odometer Selesai (KM)',
+                    hintText: 'Masukkan angka KM aktual mobil',
+                    prefixIcon: Icon(Icons.speed_rounded, size: 20),
+                  ),
+                  validator: (val) => val == null || val.isEmpty ? 'Odometer akhir wajib diisi' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: invoiceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Total Tagihan Jasa & Sparepart (Rp)',
+                    hintText: 'Contoh: 350000',
+                    prefixIcon: Icon(Icons.payments_rounded, size: 20),
+                  ),
+                  validator: (val) => val == null || val.isEmpty ? 'Nominal tagihan riil wajib diisi' : null,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('BATAL', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  // Memicu fungsi update penutupan tugas terintegrasi ke Cubit
+                  cubit.completeService(
+                    ticketDocId: docId,
+                    kmService: int.parse(odometerController.text),
+                    invoiceAmount: int.parse(invoiceController.text),
+                  );
+                  Navigator.pop(context); // Tutup dialog modal
+                  Navigator.pop(context); // Otomatis kembali ke antrean dashboard utama
+                }
+              },
+              child: const Text('SUBMIT DATA & SELESAI'),
+            ),
+          ],
         );
       },
     );
@@ -68,7 +135,70 @@ class TicketDetailPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Card Atas: Deskripsi Tugas Keluhan
+                        // FIX ERROR: Mengubah akses Bracket [] ke Dot (.) untuk Spesifikasi Kendaraan
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey.shade900,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${ticket.carDetails.brand} ${ticket.carDetails.type} (${ticket.carDetails.year})',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'No. Polisi: ${ticket.carDetails.plate}  |  Warna: ${ticket.carDetails.color}',
+                                style: TextStyle(color: Colors.blueGrey.shade200, fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                'Mesin: ${ticket.carDetails.engineType}  |  Transmisi: ${ticket.carDetails.transmission}',
+                                style: TextStyle(color: Colors.blueGrey.shade200, fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'KM AWAL CHECK-IN BENKEL: ${ticket.kmCheckIn} KM',
+                                style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // BARU: Komponen Slider Gambar Keluhan Fisik Kendaraan (Langkah B)
+                        if (ticket.complaintPhotoUrls.isNotEmpty) ...[
+                          const Text('DOKUMENTASI FOTO KERUSAKAN AWAL Casier:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 120,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: ticket.complaintPhotoUrls.length,
+                              itemBuilder: (context, idx) {
+                                return Container(
+                                  margin: const EdgeInsets.only(right: 10),
+                                  width: 180,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.blueGrey.shade100),
+                                    image: DecorationImage(
+                                      image: NetworkImage(ticket.complaintPhotoUrls[idx]),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // Card: Deskripsi Tugas Keluhan
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(20),
@@ -169,7 +299,7 @@ class TicketDetailPage extends StatelessWidget {
                   ),
                 ),
                 
-                // PANEL UTAMA BAWAH: Tombol Taktis Aksi Status Kerja Mekanik
+                // PANEL UTAMA BAWAH: Tombol Aksi Kerja
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: const BoxDecoration(
@@ -181,7 +311,6 @@ class TicketDetailPage extends StatelessWidget {
                     top: false,
                     child: Row(
                       children: [
-                        // Tombol Input Nota (Hanya aktif jika status pengerjaan sudah dimulai/processing)
                         if (isProcessing) ...[
                           ElevatedButton(
                             onPressed: () => _openAddProcurementForm(context, context.read<TicketCubit>(), ticket),
@@ -197,7 +326,6 @@ class TicketDetailPage extends StatelessWidget {
                           const SizedBox(width: 12),
                         ],
                         
-                        // Tombol Utama Alur Kerja
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
@@ -205,8 +333,8 @@ class TicketDetailPage extends StatelessWidget {
                               if (isWaiting) {
                                 cubit.updateStatus(ticketDocId: ticketDocumentId, newStatus: 'processing');
                               } else if (isProcessing) {
-                                cubit.updateStatus(ticketDocId: ticketDocumentId, newStatus: 'completed');
-                                Navigator.pop(context); // Otomatis kembali ke antrean utama jika selesai servis
+                                // SINKRONISASI INTEGRASI: Mengaktifkan Dialog Pop-up Form Pengisian Odometer & Invoice Jasa
+                                _showCompletionDialog(context, cubit, ticketDocumentId);
                               }
                             },
                             style: ElevatedButton.styleFrom(
