@@ -128,7 +128,6 @@ class TicketDetailPage extends StatelessWidget {
           }
         },
         builder: (context, state) {
-          // Menyediakan fall-through UI agar tidak stuck loading jika state memancarkan tipe lain
           if (state is TicketLoading) {
             return const Center(child: CircularProgressIndicator(color: Colors.blue));
           }
@@ -150,6 +149,9 @@ class TicketDetailPage extends StatelessWidget {
           final int totalBelanja = ticket.externalProcurements.fold(0, (sum, item) => sum + item.cost);
           final isWaiting = ticket.status == 'waiting';
           final isProcessing = ticket.status == 'processing';
+
+          // PARSING FOTO KELUHAN: Ambil data array complaintPhotoUrls milik model entity
+          final List<String> complaintPhotos = ticket.complaintPhotoUrls;
 
           return Column(
             children: [
@@ -184,7 +186,7 @@ class TicketDetailPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'KM AWAL CHECK-IN BENKEL: ${ticket.kmCheckIn} KM',
+                              'KM AWAL CHECK-IN BENGKEL: ${ticket.kmCheckIn} KM',
                               style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5),
                             ),
                           ],
@@ -192,50 +194,60 @@ class TicketDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // PARSER IMAGE HYBRID (Base64 Data URI & HTTPS Link URL)
-                      if (ticket.complaintPhotoUrls.isNotEmpty) ...[
-                        const Text('DOKUMENTASI FOTO KERUSAKAN AWAL:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
-                        const SizedBox(height: 8),
+                      // IMPLEMENTASI FIX: Menampilkan Slider Banyak Foto Keluhan Pelanggan murni dari ImgBB URL
+                      const Text(
+                        'DOKUMENTASI FOTO KERUSAKAN (DARI PELANGGAN):', 
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 8),
+                      if (complaintPhotos.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.blueGrey.shade100),
+                          ),
+                          child: const Text(
+                            'Pelanggan tidak melampirkan foto keluhan fisik.',
+                            style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
+                          ),
+                        )
+                      else
                         SizedBox(
                           height: 120,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
-                            itemCount: ticket.complaintPhotoUrls.length,
+                            itemCount: complaintPhotos.length,
                             itemBuilder: (context, idx) {
-                              final String photoUrl = ticket.complaintPhotoUrls[idx];
-
                               return Container(
                                 margin: const EdgeInsets.only(right: 10),
-                                width: 180,
+                                width: 140,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: Colors.blueGrey.shade100),
                                 ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    photoUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Center(
-                                        child: Icon(Icons.broken_image_rounded, color: Colors.grey),
-                                      );
-                                    },
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return const Center(
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      );
-                                    },
-                                  ),
+                                clipBehavior: Clip.hardEdge,
+                                child: Image.network(
+                                  complaintPhotos[idx],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Icon(Icons.broken_image_rounded, color: Colors.grey),
+                                    );
+                                  },
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                                  },
                                 ),
                               );
                             },
                           ),
                         ),
-                        const SizedBox(height: 24),
-                      ],  
+                      const SizedBox(height: 24),
 
                       Container(
                         width: double.infinity,
@@ -262,13 +274,13 @@ class TicketDetailPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'PENGADAAN REIMBURSEMENT',
+                            'PENGADAAN REIMBURSEMENT SPAREPART & NOTA LUAR',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 0.5),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
-                            child: Text('${ticket.externalProcurements.length} Terinput', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue.shade800)),
+                            child: Text('${ticket.externalProcurements.length} Nota', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue.shade800)),
                           ),
                         ],
                       ),
@@ -283,7 +295,7 @@ class TicketDetailPage extends StatelessWidget {
                             children: [
                               Icon(Icons.receipt_long_rounded, size: 48, color: Colors.grey),
                               SizedBox(height: 12),
-                              Text('Belum ada nota luar yang diinput', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
+                              Text('Belum ada pengadaan nota luar yang diinput oleh mekanik', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey), textAlign: TextAlign.center),
                             ],
                           ),
                         )
@@ -294,24 +306,66 @@ class TicketDetailPage extends StatelessWidget {
                           itemCount: ticket.externalProcurements.length,
                           itemBuilder: (context, index) {
                             final item = ticket.externalProcurements[index];
+                            final hasInvoicePhoto = item.receiptPhotoUrl.isNotEmpty && item.receiptPhotoUrl.startsWith('http');
+
                             return Card(
                               color: Colors.white,
                               elevation: 0,
                               margin: const EdgeInsets.symmetric(vertical: 6),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: Colors.blueGrey.shade100)),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              child: ExpansionTile(
                                 leading: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(10)),
                                   child: const Icon(Icons.shopping_bag_rounded, color: Colors.green),
                                 ),
                                 title: Text(item.partName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueGrey.shade900)),
-                                subtitle: Text('Toko: ${item.supplierStore}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                subtitle: Text('Toko/Supplier: ${item.supplierStore}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                                 trailing: Text(
                                   currencyFormatter.format(item.cost),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                                 ),
+                                children: [
+                                  // IMPLEMENTASI CODES: Menampilkan foto lampiran berkas bukti fisik nota belanjaan mekanik
+                                  Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Divider(),
+                                        const SizedBox(height: 4),
+                                        const Text('LAMPIRAN FOTO NOTA FISIK / KWITANSI REIMBURSE:', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                                        const SizedBox(height: 8),
+                                        if (hasInvoicePhoto)
+                                          Container(
+                                            width: double.infinity,
+                                            height: 200,
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: Colors.grey.shade300),
+                                            ),
+                                            clipBehavior: Clip.hardEdge,
+                                            child: Image.network(
+                                              item.receiptPhotoUrl,
+                                              fit: BoxFit.cover,
+                                              loadingBuilder: (context, child, progress) {
+                                                if (progress == null) return child;
+                                                return const Center(child: CircularProgressIndicator());
+                                              },
+                                              errorBuilder: (context, err, stack) => const Center(
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [Icon(Icons.broken_image, color: Colors.red), SizedBox(width: 8), Text('Gambar nota rusak/terhapus', style: TextStyle(fontSize: 11, color: Colors.grey))],
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        else
+                                          const Text('Mekanik tidak menyertakan foto lampiran nota belanja.', style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.red)),
+                                      ],
+                                    ),
+                                  )
+                                ],
                               ),
                             );
                           },
@@ -325,7 +379,7 @@ class TicketDetailPage extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('TOTAL BELANJA NOTA:', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
+                              const Text('TOTAL BIAYA PENGADAAN (REIMBURSE):', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
                               Text(currencyFormatter.format(totalBelanja), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                             ],
                           ),

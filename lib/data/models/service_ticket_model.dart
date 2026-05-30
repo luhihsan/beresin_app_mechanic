@@ -19,7 +19,7 @@ class ServiceTicketModel {
   final String status;
   final DateTime date;
   final DateTime createdAt;
-  final DateTime? targetCompletionTime; // BARU
+  final DateTime? targetCompletionTime; 
   final List<String> complaintPhotoUrls;
   final List<ExternalProcurementModel> externalProcurements;
   final CarDetailsModel carDetails;
@@ -46,6 +46,10 @@ class ServiceTicketModel {
   });
 
   factory ServiceTicketModel.fromJson(Map<String, dynamic> json, String documentId) {
+    // FIX SINKRONISASI DATA: Parsing Array String murni dari Firestore tanpa variabel ilegal
+    final List<dynamic> rawPhotos = json['complaintPhotoUrls'] ?? [];
+    final List<String> parsedPhotos = List<String>.from(rawPhotos);
+
     return ServiceTicketModel(
       id: documentId,
       ticketId: json['ticketId'] ?? '',
@@ -62,7 +66,7 @@ class ServiceTicketModel {
       date: (json['date'] is Timestamp) ? (json['date'] as Timestamp).toDate() : DateTime.now(),
       createdAt: (json['createdAt'] is Timestamp) ? (json['createdAt'] as Timestamp).toDate() : DateTime.now(),
       targetCompletionTime: (json['targetCompletionTime'] is Timestamp) ? (json['targetCompletionTime'] as Timestamp).toDate() : null,
-      complaintPhotoUrls: List<String>.from(json['complaintPhotoUrls'] ?? []),
+      complaintPhotoUrls: parsedPhotos, // Masukkan ke sini
       externalProcurements: (json['externalProcurements'] as List?)
               ?.map((e) => ExternalProcurementModel.fromJson(e as Map<String, dynamic>))
               .toList() ?? [],
@@ -131,6 +135,7 @@ class ServiceTicketModel {
       status: entity.status,
       date: entity.date,
       createdAt: entity.createdAt,
+      targetCompletionTime: entity.targetCompletionTime, // Pastikan field ini terisi aman
       complaintPhotoUrls: entity.complaintPhotoUrls,
       externalProcurements: entity.externalProcurements
           .map((e) => ExternalProcurementModel.fromEntity(e))
