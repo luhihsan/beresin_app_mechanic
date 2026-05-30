@@ -202,30 +202,7 @@ class TicketDetailPage extends StatelessWidget {
                             scrollDirection: Axis.horizontal,
                             itemCount: ticket.complaintPhotoUrls.length,
                             itemBuilder: (context, idx) {
-                              final String rawString = ticket.complaintPhotoUrls[idx];
-                              
-                              // Cek apakah string berupa tautan web URL biasa
-                              if (rawString.trim().startsWith('http')) {
-                                return Container(
-                                  margin: const EdgeInsets.only(right: 10),
-                                  width: 180,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.blueGrey.shade100),
-                                    image: DecorationImage(image: NetworkImage(rawString), fit: BoxFit.cover),
-                                  ),
-                                );
-                              }
-
-                              // Jika bukan URL, decode string sebagai Base64 Data URI
-                              Uint8List? imageBytes;
-                              try {
-                                final cleanBase64 = rawString.contains(',') ? rawString.split(',')[1] : rawString;
-                                imageBytes = base64Decode(cleanBase64.trim());
-                              } catch (_) {
-                                imageBytes = null;
-                              }
+                              final String photoUrl = ticket.complaintPhotoUrls[idx];
 
                               return Container(
                                 margin: const EdgeInsets.only(right: 10),
@@ -237,16 +214,28 @@ class TicketDetailPage extends StatelessWidget {
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: imageBytes != null 
-                                      ? Image.memory(imageBytes, fit: BoxFit.cover)
-                                      : const Icon(Icons.broken_image_rounded, color: Colors.grey),
+                                  child: Image.network(
+                                    photoUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Center(
+                                        child: Icon(Icons.broken_image_rounded, color: Colors.grey),
+                                      );
+                                    },
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      );
+                                    },
+                                  ),
                                 ),
                               );
                             },
                           ),
                         ),
                         const SizedBox(height: 24),
-                      ],
+                      ],  
 
                       Container(
                         width: double.infinity,

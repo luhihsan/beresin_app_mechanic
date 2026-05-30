@@ -1,39 +1,64 @@
+// lib/data/datasources/storage_remote_datasource.dart
+import 'dart:convert';
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 
 abstract class StorageRemoteDataSource {
-  /// Mengunggah berkas foto nota ke dalam Firebase Storage.
-  /// Mengembalikan tautan unduhan (Download URL) digital berupa [String].
-  Future<String> uploadReceiptImage({required String ticketId, required File imageFile});
+  Future<String> uploadReceiptImage({
+    required String ticketId,
+    required File imageFile,
+  });
 }
 
 @LazySingleton(as: StorageRemoteDataSource)
 class StorageRemoteDataSourceImpl implements StorageRemoteDataSource {
-  final FirebaseStorage _storage;
+  static const String _imgBbUrl = 'https://api.imgbb.com/1/upload';
 
-  StorageRemoteDataSourceImpl(this._storage);
+  /// Helper internal untuk membaca API Key dari berkas secrets.json secara aman
+  Future<String> _loadApiKeyFromSecrets() async {
+    try {
+      final String response = await rootBundle.loadString('secrets.json');
+      final Map<String, dynamic> data = jsonDecode(response);
+      final String? apiKey = data['IMGBB_API_KEY'];
+      
+      if (apiKey == null || apiKey.isEmpty || apiKey.contains('masukkan_api_key')) {
+        throw Exception('API Key ImgBB di dalam secrets.json belum diisi dengan benar.');
+      }
+      return apiKey;
+    } catch (e) {
+      throw Exception('Gagal membaca file secrets.json. Pastikan berkas sudah didaftarkan di pubspec.yaml: ${e.toString()}');
+    }
+  }
 
   @override
-  Future<String> uploadReceiptImage({required String ticketId, required File imageFile}) async {
+  Future<String> uploadReceiptImage({
+    required String ticketId,
+    required File imageFile,
+  }) async {
     try {
-      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      
-      // Menyusun struktur direktori penyimpanan yang rapi: receipts/TKT-ID/REF-timestamp.jpg
-      final Reference ref = _storage.ref().child('receipts').child(ticketId).child('REF-$timestamp.jpg');
-      
-      // Proses eksekusi unggah berkas dengan penambahan metadata gambar
-      final UploadTask uploadTask = ref.putFile(
-        imageFile,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-      
-      final TaskSnapshot snapshot = await uploadTask;
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
-      
-      return downloadUrl;
+      // 1. Ambil token API Key ImgBB secara dinamis dari secrets.json
+      final String activeApiKey = await _loadApiKeyFromSecrets();
+
+      // 2. Susun payload MultiPart HTTP Request
+      final request = http.MultipartRequest('POST', Uri.parse(_imgBbUrl))
+        ..fields['key'] = activeApiKey
+        ..files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+
+      // 3. Tembak ke server hosting ImgBB
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final String uploadedUrl = responseData['data']['url'];
+        return uploadedUrl;
+      } else {
+        throw Exception('Server ImgBB menolak unggahan nota. Status: ${response.statusCode}');
+      }
     } catch (e) {
-      throw Exception('Gagal mengunggah berkas gambar ke Firebase Storage: $e');
+      throw Exception('Kendala enkripsi/jaringan pada upload nota ImgBB: ${e.toString()}');
     }
   }
 }
