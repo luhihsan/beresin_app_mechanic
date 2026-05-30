@@ -19,6 +19,7 @@ class ServiceTicketModel {
   final String status;
   final DateTime date;
   final DateTime createdAt;
+  final DateTime? targetCompletionTime; // BARU
   final List<String> complaintPhotoUrls;
   final List<ExternalProcurementModel> externalProcurements;
   final CarDetailsModel carDetails;
@@ -38,6 +39,7 @@ class ServiceTicketModel {
     required this.status,
     required this.date,
     required this.createdAt,
+    this.targetCompletionTime,
     required this.complaintPhotoUrls,
     required this.externalProcurements,
     required this.carDetails,
@@ -57,12 +59,9 @@ class ServiceTicketModel {
       invoiceAmount: json['invoiceAmount'] ?? 0,
       tasks: json['tasks'] ?? '',
       status: json['status'] ?? 'waiting',
-      date: (json['date'] is Timestamp) 
-          ? (json['date'] as Timestamp).toDate() 
-          : DateTime.now(),
-      createdAt: (json['createdAt'] is Timestamp) 
-          ? (json['createdAt'] as Timestamp).toDate() 
-          : DateTime.now(),
+      date: (json['date'] is Timestamp) ? (json['date'] as Timestamp).toDate() : DateTime.now(),
+      createdAt: (json['createdAt'] is Timestamp) ? (json['createdAt'] as Timestamp).toDate() : DateTime.now(),
+      targetCompletionTime: (json['targetCompletionTime'] is Timestamp) ? (json['targetCompletionTime'] as Timestamp).toDate() : null,
       complaintPhotoUrls: List<String>.from(json['complaintPhotoUrls'] ?? []),
       externalProcurements: (json['externalProcurements'] as List?)
               ?.map((e) => ExternalProcurementModel.fromJson(e as Map<String, dynamic>))
@@ -86,6 +85,7 @@ class ServiceTicketModel {
       'status': status,
       'date': Timestamp.fromDate(date),
       'createdAt': Timestamp.fromDate(createdAt),
+      'targetCompletionTime': targetCompletionTime != null ? Timestamp.fromDate(targetCompletionTime!) : null,
       'complaintPhotoUrls': complaintPhotoUrls,
       'externalProcurements': externalProcurements.map((e) => e.toJson()).toList(),
       'carDetails': carDetails.toJson(),
@@ -108,6 +108,7 @@ class ServiceTicketModel {
       status: status,
       date: date,
       createdAt: createdAt,
+      targetCompletionTime: targetCompletionTime,
       complaintPhotoUrls: complaintPhotoUrls,
       externalProcurements: externalProcurements.map((e) => e.toEntity()).toList(),
       carDetails: carDetails.toEntity(),

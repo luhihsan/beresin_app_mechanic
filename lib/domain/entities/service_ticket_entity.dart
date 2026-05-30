@@ -7,19 +7,20 @@ class ServiceTicketEntity {
   final String ticketId;
   final String customerId;
   final String vehicleId;
-  final String customerUid; // BARU
+  final String customerUid;
   final String mechanicId;
-  final String mechanicName; // BARU
+  final String mechanicName;
   final int kmCheckIn;
   final int kmService;
-  final int invoiceAmount; // BARU
+  final int invoiceAmount;
   final String tasks;
   final String status;
   final DateTime date;
   final DateTime createdAt;
-  final List<String> complaintPhotoUrls; // BARU
+  final DateTime? targetCompletionTime; 
+  final List<String> complaintPhotoUrls;
   final List<ExternalProcurementEntity> externalProcurements;
-  final CarDetailsEntity carDetails; // BARU
+  final CarDetailsEntity carDetails;
 
   const ServiceTicketEntity({
     required this.id,
@@ -36,6 +37,7 @@ class ServiceTicketEntity {
     required this.status,
     required this.date,
     required this.createdAt,
+    this.targetCompletionTime,
     required this.complaintPhotoUrls,
     required this.externalProcurements,
     required this.carDetails,
