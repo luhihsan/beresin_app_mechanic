@@ -7,7 +7,7 @@ import '../../domain/repositories/service_ticket_repository.dart';
 import '../datasources/service_ticket_remote_datasource.dart';
 import '../datasources/storage_remote_datasource.dart';
 import '../models/external_procurement_model.dart';
-import '../models/service_ticket_model.dart'; // Import aman karena sudah Vanilla Dart
+import '../models/service_ticket_model.dart'; 
 
 @LazySingleton(as: ServiceTicketRepository)
 class ServiceTicketRepositoryImpl implements ServiceTicketRepository {

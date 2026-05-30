@@ -17,37 +17,41 @@ class TicketDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<TicketCubit>(
       create: (context) => getIt<TicketCubit>()..watchMechanicTickets(mechanicId),
-      child: Scaffold(
-        backgroundColor: Colors.blueGrey.shade50,
-        appBar: AppBar(
-          title: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'BERESIN GARASI',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.blue, letterSpacing: 1.0),
+      // SOLUSI: Gunakan Builder agar Scaffold & AppBar mendapatkan konteks di bawah BlocProvider
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: Colors.blueGrey.shade50,
+            appBar: AppBar(
+              title: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'BERESIN GARASI',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.blue, letterSpacing: 1.0),
+                  ),
+                  Text(
+                    'Antrean Kerja Realtime',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
+                  ),
+                ],
               ),
-              Text(
-                'Antrean Kerja Realtime',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: Colors.blueGrey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.sync_rounded, color: Colors.black87),
-                onPressed: () => context.read<TicketCubit>().watchMechanicTickets(mechanicId),
-              ),
-            )
+              backgroundColor: Colors.white,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              actions: [
+                Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.sync_rounded, color: Colors.black87),
+                    // Sekarang context di sini aman digunakan karena merujuk ke Builder context
+                    onPressed: () => context.read<TicketCubit>().watchMechanicTickets(mechanicId),
+                  ),
+                )
           ],
         ),
         body: BlocBuilder<TicketCubit, TicketState>(
@@ -118,6 +122,8 @@ class TicketDashboardPage extends StatelessWidget {
             return const SizedBox.shrink();
           },
         ),
+          );
+        }
       ),
     );
   }
@@ -198,7 +204,6 @@ class _ModernTicketCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     
-                    // PENYESUAIAN BANNER MOBIL: Mengakses data Entity menggunakan Dot (.) Notation
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
