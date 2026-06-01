@@ -18,5 +18,7 @@ abstract class ServiceTicketRepository {
     required String ticketDocumentId,
     required int kmService,
     required int invoiceAmount,
+    required String mechanicNotes,
+    File? proofImage,
   });
 }

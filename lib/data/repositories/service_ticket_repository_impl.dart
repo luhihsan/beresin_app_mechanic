@@ -63,11 +63,28 @@ class ServiceTicketRepositoryImpl implements ServiceTicketRepository {
     required String ticketDocumentId,
     required int kmService,
     required int invoiceAmount,
+    required String mechanicNotes,
+    File? proofImage,
   }) async {
+    // 1. Inisialisasi string kosong jika mekanik tidak melampirkan foto bukti
+    String finalProofPhotoUrl = "";
+
+    // 2. Jika ada berkas foto bukti, lakukan proses upload ke Firebase Storage terlebih dahulu
+    if (proofImage != null) {
+      // Kita gunakan timestamp atau docId agar nama file unik di Storage
+      finalProofPhotoUrl = await _storageRemoteDataSource.uploadReceiptImage(
+        ticketId: "${ticketDocumentId}_proof_${DateTime.now().millisecondsSinceEpoch}",
+        imageFile: proofImage,
+      );
+    }
+
+    // 3. Kirim data yang sudah lengkap ke Remote Data Source
     await _remoteDataSource.completeTicketTask(
       documentId: ticketDocumentId,
       kmService: kmService,
       invoiceAmount: invoiceAmount,
+      mechanicNotes: mechanicNotes,
+      proofPhotoUrl: finalProofPhotoUrl,
     );
   }
 }

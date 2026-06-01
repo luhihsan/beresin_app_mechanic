@@ -1,6 +1,4 @@
 // lib/presentation/features/ticket/pages/ticket_detail_page.dart
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +6,8 @@ import 'package:mechanic_app/domain/entities/service_ticket_entity.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_cubit.dart';
 import 'package:mechanic_app/presentation/features/ticket/cubit/ticket_state.dart';
 import 'package:mechanic_app/presentation/features/ticket/widgets/add_procurement_sheet.dart';
+import 'package:mechanic_app/presentation/features/ticket/widgets/image_preview_dialog.dart';
+import 'package:mechanic_app/presentation/features/ticket/widgets/service_completion_dialog.dart';
 
 class TicketDetailPage extends StatelessWidget {
   final String ticketDocumentId;
@@ -41,73 +41,6 @@ class TicketDetailPage extends StatelessWidget {
     );
   }
 
-  void _showCompletionDialog(BuildContext context, TicketCubit cubit, String docId) {
-    final odometerController = TextEditingController();
-    final invoiceController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Text('INPUT REALISASI KERJA BENGKEL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: odometerController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Odometer Selesai (KM)',
-                    hintText: 'Masukkan angka KM aktual mobil',
-                    prefixIcon: Icon(Icons.speed_rounded, size: 20),
-                  ),
-                  validator: (val) => val == null || val.isEmpty ? 'Odometer akhir wajib diisi' : null,
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: invoiceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Total Tagihan Jasa & Sparepart (Rp)',
-                    hintText: 'Contoh: 350000',
-                    prefixIcon: Icon(Icons.payments_rounded, size: 20),
-                  ),
-                  validator: (val) => val == null || val.isEmpty ? 'Nominal tagihan riil wajib diisi' : null,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('BATAL', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  cubit.completeService(
-                    ticketDocId: docId,
-                    kmService: int.parse(odometerController.text),
-                    invoiceAmount: int.parse(invoiceController.text),
-                  );
-                  Navigator.pop(context); 
-                  Navigator.pop(context); 
-                }
-              },
-              child: const Text('SUBMIT DATA & SELESAI'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -124,11 +57,7 @@ class TicketDetailPage extends StatelessWidget {
         listener: (context, state) {
           if (state is TicketError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red.shade800,
-                behavior: SnackBarBehavior.floating,
-              ),
+              SnackBar(content: Text(state.message), backgroundColor: Colors.red.shade800, behavior: SnackBarBehavior.floating),
             );
           }
         },
@@ -154,7 +83,6 @@ class TicketDetailPage extends StatelessWidget {
           final int totalBelanja = ticket.externalProcurements.fold(0, (sum, item) => sum + item.cost);
           final isWaiting = ticket.status == 'waiting';
           final isProcessing = ticket.status == 'processing';
-
           final List<String> complaintPhotos = ticket.complaintPhotoUrls;
 
           return Column(
@@ -168,54 +96,29 @@ class TicketDetailPage extends StatelessWidget {
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.blueGrey.shade900,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        decoration: BoxDecoration(color: Colors.blueGrey.shade900, borderRadius: BorderRadius.circular(16)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${ticket.carDetails.brand} ${ticket.carDetails.type} (${ticket.carDetails.year})',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
-                            ),
+                            Text('${ticket.carDetails.brand} ${ticket.carDetails.type} (${ticket.carDetails.year})', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
                             const SizedBox(height: 4),
-                            Text(
-                              'No. Polisi: ${ticket.carDetails.plate}  |  Warna: ${ticket.carDetails.color}',
-                              style: TextStyle(color: Colors.blueGrey.shade200, fontSize: 12, fontWeight: FontWeight.w500),
-                            ),
-                            Text(
-                              'Mesin: ${ticket.carDetails.engineType}  |  Transmisi: ${ticket.carDetails.transmission}',
-                              style: TextStyle(color: Colors.blueGrey.shade200, fontSize: 12, fontWeight: FontWeight.w500),
-                            ),
+                            Text('No. Polisi: ${ticket.carDetails.plate}  |  Warna: ${ticket.carDetails.color}', style: TextStyle(color: Colors.blueGrey.shade200, fontSize: 12, fontWeight: FontWeight.w500)),
+                            Text('Mesin: ${ticket.carDetails.engineType}  |  Transmisi: ${ticket.carDetails.transmission}', style: TextStyle(color: Colors.blueGrey.shade200, fontSize: 12, fontWeight: FontWeight.w500)),
                             const SizedBox(height: 8),
-                            Text(
-                              'KM AWAL CHECK-IN BENGKEL: ${ticket.kmCheckIn} KM',
-                              style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5),
-                            ),
+                            Text('KM AWAL CHECK-IN BENGKEL: ${ticket.kmCheckIn} KM', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
                           ],
                         ),
                       ),
                       const SizedBox(height: 20),
 
-                      const Text(
-                        'DOKUMENTASI FOTO KERUSAKAN (DARI PELANGGAN):', 
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5),
-                      ),
+                      const Text('DOKUMENTASI FOTO KERUSAKAN (DARI PELANGGAN):', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
                       const SizedBox(height: 8),
                       if (complaintPhotos.isEmpty)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.blueGrey.shade100),
-                          ),
-                          child: const Text(
-                            'Pelanggan tidak melampirkan foto keluhan fisik.',
-                            style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
-                          ),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.blueGrey.shade100)),
+                          child: const Text('Pelanggan tidak melampirkan foto keluhan fisik.', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500)),
                         )
                       else
                         SizedBox(
@@ -224,28 +127,20 @@ class TicketDetailPage extends StatelessWidget {
                             scrollDirection: Axis.horizontal,
                             itemCount: complaintPhotos.length,
                             itemBuilder: (context, idx) {
-                              return Container(
-                                margin: const EdgeInsets.only(right: 10),
-                                width: 140,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.blueGrey.shade100),
-                                ),
-                                clipBehavior: Clip.hardEdge,
-                                // SINKRONISASI CODES: Menggunakan safe mirror path
-                                child: Image.network(
-                                  _getSafeImageUrl(complaintPhotos[idx]),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Icon(Icons.broken_image_rounded, color: Colors.grey),
-                                    );
-                                  },
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-                                  },
+                              final safeUrl = _getSafeImageUrl(complaintPhotos[idx]);
+                              return GestureDetector(
+                                onTap: () => showDialog(context: context, builder: (_) => ImagePreviewDialog(imageUrl: safeUrl)),
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 10),
+                                  width: 140,
+                                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.blueGrey.shade100)),
+                                  clipBehavior: Clip.hardEdge,
+                                  child: Image.network(
+                                    safeUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+                                    loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                  ),
                                 ),
                               );
                             },
@@ -256,11 +151,7 @@ class TicketDetailPage extends StatelessWidget {
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.blueGrey.shade100),
-                        ),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.blueGrey.shade100)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -274,17 +165,10 @@ class TicketDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 28),
 
-                      // REKTIFIKASI FIX OVERFLOW: Membungkus judul teks dengan widget Expanded
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Expanded(
-                            child: Text(
-                              'PENGADAAN REIMBURSEMENT SPAREPART & NOTA LUAR',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 0.5),
-                              maxLines: 2,
-                            ),
-                          ),
+                          const Expanded(child: Text('PENGADAAN REIMBURSEMENT SPAREPART & NOTA LUAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 0.5), maxLines: 2)),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -316,6 +200,7 @@ class TicketDetailPage extends StatelessWidget {
                           itemBuilder: (context, index) {
                             final item = ticket.externalProcurements[index];
                             final hasInvoicePhoto = item.receiptPhotoUrl.isNotEmpty && item.receiptPhotoUrl.startsWith('http');
+                            final safeReceiptUrl = _getSafeImageUrl(item.receiptPhotoUrl);
 
                             return Card(
                               color: Colors.white,
@@ -330,10 +215,7 @@ class TicketDetailPage extends StatelessWidget {
                                 ),
                                 title: Text(item.partName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueGrey.shade900)),
                                 subtitle: Text('Toko/Supplier: ${item.supplierStore}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                trailing: Text(
-                                  currencyFormatter.format(item.cost),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
-                                ),
+                                trailing: Text(currencyFormatter.format(item.cost), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)),
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.all(12.0),
@@ -342,30 +224,19 @@ class TicketDetailPage extends StatelessWidget {
                                       children: [
                                         const Divider(),
                                         const SizedBox(height: 4),
-                                        const Text('LAMPIRAN FOTO NOTA FISIK / KWITANSI REIMBURSE:', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                                        const Text('LAMPIRAN FOTO NOTA FISIK / KWITANSI REIMBURSE (KLIK UNTUK FULL):', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
                                         const SizedBox(height: 8),
                                         if (hasInvoicePhoto)
-                                          Container(
-                                            width: double.infinity,
-                                            height: 200,
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: Colors.grey.shade300),
-                                            ),
-                                            clipBehavior: Clip.hardEdge,
-                                            // SINKRONISASI CODES: Menggunakan safe mirror path pada nota mekanik
-                                            child: Image.network(
-                                              _getSafeImageUrl(item.receiptPhotoUrl),
-                                              fit: BoxFit.cover,
-                                              loadingBuilder: (context, child, progress) {
-                                                if (progress == null) return child;
-                                                return const Center(child: CircularProgressIndicator());
-                                              },
-                                              errorBuilder: (context, err, stack) => const Center(
-                                                child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [Icon(Icons.broken_image, color: Colors.red), SizedBox(width: 8), Text('Gambar nota rusak/terhapus', style: TextStyle(fontSize: 11, color: Colors.grey))],
-                                                ),
+                                          GestureDetector(
+                                            onTap: () => showDialog(context: context, builder: (_) => ImagePreviewDialog(imageUrl: safeReceiptUrl)),
+                                            child: Container(
+                                              width: double.infinity, height: 200,
+                                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
+                                              clipBehavior: Clip.hardEdge,
+                                              child: Image.network(
+                                                safeReceiptUrl, fit: BoxFit.cover,
+                                                loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
+                                                errorBuilder: (context, err, stack) => const Center(child: Icon(Icons.broken_image, color: Colors.red)),
                                               ),
                                             ),
                                           )
@@ -407,44 +278,66 @@ class TicketDetailPage extends StatelessWidget {
                 ),
                 child: SafeArea(
                   top: false,
-                  child: Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isProcessing) ...[
-                        ElevatedButton(
-                          onPressed: () => _openAddProcurementForm(context, context.read<TicketCubit>(), ticket),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade50,
-                            foregroundColor: Colors.blue.shade900,
-                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _openAddProcurementForm(context, context.read<TicketCubit>(), ticket),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue.shade900,
+                              side: BorderSide(color: Colors.blue.shade300, width: 1.5),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.receipt_long_rounded),
+                            label: const Text('TAMBAH NOTA REIMBURSEMENT SPAREPART', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
                           ),
-                          child: const Icon(Icons.add_photo_alternate_rounded),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(height: 12),
                       ],
                       
-                      Expanded(
+                      SizedBox(
+                        width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
                             final cubit = context.read<TicketCubit>();
                             if (isWaiting) {
                               cubit.updateStatus(ticketDocId: ticketDocumentId, newStatus: 'processing');
                             } else if (isProcessing) {
-                              _showCompletionDialog(context, cubit, ticketDocumentId);
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (dialogCtx) => ServiceCompletionDialog(
+                                  totalBelanja: totalBelanja,
+                                  onConfirm: (kmService, mechanicNotes, proofImage) {
+                                    // REKTIFIKASI ERROR: Menggunakan nama parameter 'ticketId' yang benar sesuai kontrak di Cubit kamu
+                                    context.read<TicketCubit>().completeService(
+                                      ticketDocId: ticketDocumentId,
+                                      ticketId: ticket.ticketId, 
+                                      kmService: kmService,
+                                      invoiceAmount: totalBelanja,
+                                      mechanicNotes: mechanicNotes,
+                                      proofImage: proofImage,
+                                    );
+                                    Navigator.pop(dialogCtx);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              );
                             }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isWaiting ? Colors.amber.shade800 : Colors.green.shade700,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
                           child: Text(
-                            isWaiting 
-                                ? 'MULAI PROSES KERJA' 
-                                : isProcessing ? 'SELESAIKAN PERBAIKAN' : 'SERVIS SELESAI',
+                            isWaiting ? 'MULAI PROSES KERJA' : isProcessing ? 'SELESAIKAN PERBAIKAN' : 'SERVIS SELESAI',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 0.5),
                           ),
                         ),

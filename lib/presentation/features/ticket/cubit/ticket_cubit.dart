@@ -61,8 +61,6 @@ class TicketCubit extends Cubit<TicketState> {
     }
   }
 
-  /// MEMPERBAIKI LOADING LOOP EXCEPTION:
-  /// Menghapus emit(TicketLoading) agar halaman tidak ditendang keluar saat mengunggah nota belanjaan
   Future<void> submitExternalProcurement({
     required String ticketDocId,
     required String ticketId,
@@ -91,14 +89,19 @@ class TicketCubit extends Cubit<TicketState> {
 
   Future<void> completeService({
     required String ticketDocId,
+    required String ticketId,
     required int kmService,
     required int invoiceAmount,
+    required String mechanicNotes,
+    File? proofImage,
   }) async {
     try {
       await _repository.completeTicketTask(
         ticketDocumentId: ticketDocId,
         kmService: kmService,
         invoiceAmount: invoiceAmount,
+        mechanicNotes: mechanicNotes,
+        proofImage: proofImage,
       );
     } catch (e) {
       emit(TicketError('Gagal menyelesaikan servis: ${e.toString()}'));

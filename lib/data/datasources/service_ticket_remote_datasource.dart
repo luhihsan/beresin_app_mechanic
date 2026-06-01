@@ -12,11 +12,12 @@ abstract class ServiceTicketRemoteDataSource {
   });
   Future<void> updateTicketStatus({required String documentId, required String status});
   
-  // BARU: Kontrak untuk menyelesaikan tugas montir secara terintegrasi
   Future<void> completeTicketTask({
     required String documentId,
     required int kmService,
     required int invoiceAmount,
+    required String mechanicNotes,
+    required String proofPhotoUrl,
   });
 }
 
@@ -66,11 +67,15 @@ class ServiceTicketRemoteDataSourceImpl implements ServiceTicketRemoteDataSource
     required String documentId,
     required int kmService,
     required int invoiceAmount,
+    required String mechanicNotes,
+    required String proofPhotoUrl,
   }) async {
     await _firestore.collection('serviceTickets').doc(documentId).update({
       'status': 'completed',
       'kmService': kmService,
       'invoiceAmount': invoiceAmount,
+      'mechanicNotes': mechanicNotes,
+      'proofPhotoUrl': proofPhotoUrl,
     });
   }
 }
