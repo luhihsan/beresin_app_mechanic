@@ -76,7 +76,11 @@ class TicketDashboardPage extends StatelessWidget {
                 }
 
                 if (state is TicketLoaded) {
+                  // FILTER GUARDIAN: Tiket otomatis lenyap dari halaman aktif jika statusnya sudah 'completed'
                   final activeTickets = state.tickets.where((t) => t.status != 'completed').toList();
+
+                  // IMPLEMENTASI SORTING: Mengurutkan tiket dari waktu assign/buat terbaru paling atas
+                  activeTickets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
                   if (activeTickets.isEmpty) {
                     return Center(
@@ -88,7 +92,6 @@ class TicketDashboardPage extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
-                              // FIX: Menggunakan file PNG asli bawaan aset proyek agar tidak error Asset Not Found
                               child: Image.asset(
                                 'assets/icons/ic_calender.png',
                                 height: 56,

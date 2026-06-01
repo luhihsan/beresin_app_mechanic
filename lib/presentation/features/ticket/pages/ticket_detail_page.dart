@@ -14,6 +14,11 @@ class TicketDetailPage extends StatelessWidget {
 
   const TicketDetailPage({super.key, required this.ticketDocumentId});
 
+  // Fungsi pembantu untuk mengamankan link gambar dari pemblokiran SSL ISP lokal
+  String _getSafeImageUrl(String url) {
+    return url.replaceAll('i.ibb.co', 'i.ibb.co.com');
+  }
+
   void _openAddProcurementForm(BuildContext context, TicketCubit cubit, ServiceTicketEntity ticket) {
     showModalBottomSheet(
       context: context,
@@ -150,7 +155,6 @@ class TicketDetailPage extends StatelessWidget {
           final isWaiting = ticket.status == 'waiting';
           final isProcessing = ticket.status == 'processing';
 
-          // PARSING FOTO KELUHAN: Ambil data array complaintPhotoUrls milik model entity
           final List<String> complaintPhotos = ticket.complaintPhotoUrls;
 
           return Column(
@@ -194,7 +198,6 @@ class TicketDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // IMPLEMENTASI FIX: Menampilkan Slider Banyak Foto Keluhan Pelanggan murni dari ImgBB URL
                       const Text(
                         'DOKUMENTASI FOTO KERUSAKAN (DARI PELANGGAN):', 
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5),
@@ -230,8 +233,9 @@ class TicketDetailPage extends StatelessWidget {
                                   border: Border.all(color: Colors.blueGrey.shade100),
                                 ),
                                 clipBehavior: Clip.hardEdge,
+                                // SINKRONISASI CODES: Menggunakan safe mirror path
                                 child: Image.network(
-                                  complaintPhotos[idx],
+                                  _getSafeImageUrl(complaintPhotos[idx]),
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Center(
@@ -270,13 +274,18 @@ class TicketDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 28),
 
+                      // REKTIFIKASI FIX OVERFLOW: Membungkus judul teks dengan widget Expanded
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'PENGADAAN REIMBURSEMENT SPAREPART & NOTA LUAR',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 0.5),
+                          const Expanded(
+                            child: Text(
+                              'PENGADAAN REIMBURSEMENT SPAREPART & NOTA LUAR',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 0.5),
+                              maxLines: 2,
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
@@ -326,7 +335,6 @@ class TicketDetailPage extends StatelessWidget {
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                                 ),
                                 children: [
-                                  // IMPLEMENTASI CODES: Menampilkan foto lampiran berkas bukti fisik nota belanjaan mekanik
                                   Padding(
                                     padding: const EdgeInsets.all(12.0),
                                     child: Column(
@@ -345,8 +353,9 @@ class TicketDetailPage extends StatelessWidget {
                                               border: Border.all(color: Colors.grey.shade300),
                                             ),
                                             clipBehavior: Clip.hardEdge,
+                                            // SINKRONISASI CODES: Menggunakan safe mirror path pada nota mekanik
                                             child: Image.network(
-                                              item.receiptPhotoUrl,
+                                              _getSafeImageUrl(item.receiptPhotoUrl),
                                               fit: BoxFit.cover,
                                               loadingBuilder: (context, child, progress) {
                                                 if (progress == null) return child;
