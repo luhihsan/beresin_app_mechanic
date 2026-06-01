@@ -1,6 +1,8 @@
+// lib/presentation/features/main/pages/main_navigation_page.dart
 import 'package:flutter/material.dart';
 import 'package:mechanic_app/core/constants/asset_paths.dart';
 import 'package:mechanic_app/presentation/features/ticket/pages/ticket_dashboard_page.dart';
+import 'package:mechanic_app/presentation/features/ticket/pages/ticket_history_page.dart'; // <-- Baris Impor Baru
 import 'package:mechanic_app/presentation/features/profile/pages/profile_page.dart';
 
 class MainNavigationPage extends StatefulWidget {
@@ -21,7 +23,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     super.initState();
     _pages = [
       TicketDashboardPage(mechanicId: widget.mechanicId),
-      const _HistoryPlaceholderPage(),
+      TicketHistoryPage(mechanicId: widget.mechanicId), // <-- Mengganti placeholder dengan halaman riwayat asli
       const ProfilePage(),
     ];
   }
@@ -65,7 +67,6 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 }
 
-/// Widget dekorator untuk merender berkas ikon statis dengan skema jaminan safety fallback.
 class _SafeNavigationIcon extends StatelessWidget {
   final String assetPath;
   final IconData fallbackIcon;
@@ -87,45 +88,9 @@ class _SafeNavigationIcon extends StatelessWidget {
       height: 24,
       width: 24,
       color: isActive ? activeColor : inactiveColor,
-      // Jika pustaka SVG belum di-load atau berkas belum ada, render Icon dasar tanpa error crash
       errorBuilder: (context, error, stackTrace) {
         return Icon(fallbackIcon, color: isActive ? activeColor : inactiveColor);
       },
-    );
-  }
-}
-
-class _HistoryPlaceholderPage extends StatelessWidget {
-  const _HistoryPlaceholderPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text('RIWAYAT PENGERJAAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history_rounded, size: 64, color: Colors.blueGrey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'Belum Ada Riwayat Selesai',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Tiket yang Anda selesaikan akan muncul di sini.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
